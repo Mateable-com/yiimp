@@ -14,9 +14,17 @@ echo <<<END
 <meta charset="utf-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <meta name="description" content="Yii mining pools for alternative crypto currencies">
 <meta name="keywords" content="anonymous,mining,pool,maxcoin,bitcoin,altcoin,auto,switch,exchange,profit,decred,scrypt,x11,x13,x14,x15,lbry,lyra2re,neoscrypt,sha256,quark,skein2">
+
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 END;
 
@@ -57,7 +65,7 @@ echo "</head>";
 
 ///////////////////////////////////////////////////////////////
 
-echo '<body class="page">';
+echo '<body class="page bg-light">';
 echo '<a href="/site/mainbtc" style="display: none;">main</a>';
 
 showPageHeader();
@@ -80,78 +88,92 @@ function showItemHeader($selected, $url, $name)
 
 function showPageHeader()
 {
-	echo '<div class="tabmenu-out">';
-	echo '<div class="tabmenu-inner">';
+    $action = controller()->action->id;
+    $wallet = user()->getState('yaamp-wallet');
+    $ad = isset($_GET['address']);
 
-	echo '&nbsp;&nbsp;<a href="/">'.YAAMP_SITE_NAME.'</a>';
+    echo '<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">';
+    echo '  <div class="container-fluid">';
+    echo '    <a class="navbar-brand fw-bold text-primary" href="/">' . YAAMP_SITE_NAME . '</a>';
+    echo '    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">';
+    echo '      <span class="navbar-toggler-icon"></span>';
+    echo '    </button>';
+    echo '    <div class="collapse navbar-collapse" id="navbarNav">';
+    echo '      <ul class="navbar-nav me-auto mb-2 mb-lg-0">';
 
-	$action = controller()->action->id;
-	$wallet = user()->getState('yaamp-wallet');
-	$ad = isset($_GET['address']);
+    $items = [
+        ['url' => '/', 'name' => 'Home', 'active' => (controller()->id == 'site' && $action == 'index' && !$ad)],
+        ['url' => '/site/mining', 'name' => 'Pool', 'active' => ($action == 'mining')],
+        ['url' => "/?address=$wallet", 'name' => 'Wallet', 'active' => (controller()->id == 'site' && ($action == 'index' || $action == 'wallet') && $ad)],
+        ['url' => '/stats', 'name' => 'Graphs', 'active' => (controller()->id == 'stats')],
+        ['url' => '/site/miners', 'name' => 'Miners', 'active' => ($action == 'miners')],
+        ['url' => '/site/api', 'name' => 'API', 'active' => (controller()->id == 'api')],
+    ];
 
-	showItemHeader(controller()->id=='site' && $action=='index' && !$ad, '/', 'Home');
-	showItemHeader($action=='mining', '/site/mining', 'Pool');
-	showItemHeader(controller()->id=='site'&&($action=='index' || $action=='wallet') && $ad, "/?address=$wallet", 'Wallet');
-	showItemHeader(controller()->id=='stats', '/stats', 'Graphs');
-	showItemHeader($action=='miners', '/site/miners', 'Miners');
-	showItemHeader(controller()->id=='api', '/site/api', 'API');
-	if (YIIMP_PUBLIC_EXPLORER)
-		showItemHeader(controller()->id=='explorer', '/explorer', 'Explorers');
+    if (YIIMP_PUBLIC_EXPLORER) $items[] = ['url' => '/explorer', 'name' => 'Explorers', 'active' => (controller()->id == 'explorer')];
+    if (YIIMP_PUBLIC_BENCHMARK) $items[] = ['url' => '/bench', 'name' => 'Benchs', 'active' => (controller()->id == 'bench')];
+    if (YAAMP_RENTAL) $items[] = ['url' => '/renting', 'name' => 'Rental', 'active' => (controller()->id == 'renting')];
 
-	if (YIIMP_PUBLIC_BENCHMARK)
-		showItemHeader(controller()->id=='bench', '/bench', 'Benchs');
+    foreach ($items as $item) {
+        $activeClass = $item['active'] ? 'active bg-primary' : '';
+        echo '<li class="nav-item">';
+        echo '  <a class="nav-link rounded px-3 ' . $activeClass . '" href="' . $item['url'] . '">' . $item['name'] . '</a>';
+        echo '</li>';
+    }
 
-	if (YAAMP_RENTAL)
-		showItemHeader(controller()->id=='renting', '/renting', 'Rental');
+    if (YIIMP_ADMIN_LOGIN && controller()->admin) {
+        if (isAdminIP($_SERVER['REMOTE_ADDR']) === false) {
+            debuglog("admin {$_SERVER['REMOTE_ADDR']}");
+        }
+        echo '<li class="nav-item dropdown ms-lg-3">';
+        echo '  <a class="nav-link dropdown-toggle text-warning border border-warning rounded px-3" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">';
+        echo '    <i class="fa fa-cog me-1"></i> Admin';
+        echo '  </a>';
+        echo '  <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="adminDropdown">';
+        echo '    <li><a class="dropdown-item" href="/coin"><i class="fa fa-coins me-2"></i>Coins</a></li>';
+        echo '    <li><a class="dropdown-item" href="/admin/dashboard"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a></li>';
+        echo '    <li><a class="dropdown-item" href="/admin/coinwallets"><i class="fa fa-wallet me-2"></i>Wallets</a></li>';
+        if (YAAMP_RENTAL) echo '    <li><a class="dropdown-item" href="/renting/admin"><i class="fa fa-tasks me-2"></i>Jobs</a></li>';
+        if (YAAMP_ALLOW_EXCHANGE) echo '    <li><a class="dropdown-item" href="/trading"><i class="fa fa-exchange-alt me-2"></i>Trading</a></li>';
+        if (YAAMP_USE_NICEHASH_API) echo '    <li><a class="dropdown-item" href="/nicehash"><i class="fa fa-microchip me-2 text-info"></i>Nicehash</a></li>';
+        echo '    <li><hr class="dropdown-divider"></li>';
+        echo '    <li><a class="dropdown-item text-danger" href="/admin/logout"><i class="fa fa-sign-out-alt me-2"></i>Logout</a></li>';
+        echo '  </ul>';
+        echo '</li>';
+    }
 
-	if (YIIMP_ADMIN_LOGIN) {
-		if(controller()->admin)
-		{
-			if (isAdminIP($_SERVER['REMOTE_ADDR']) === false)
-				debuglog("admin {$_SERVER['REMOTE_ADDR']}");
+    echo '      </ul>';
 
-			showItemHeader(controller()->id=='coin', '/coin', 'Coins');
-			showItemHeader($action=='common', '/admin/dashboard', 'Dashboard');
-			showItemHeader(controller()->id=='admin'&&$action=='coinwallets', "/admin/coinwallets", 'Wallets');
+    $mining = getdbosql('db_mining');
+    $nextpayment = date('H:i T', $mining->last_payout + YAAMP_PAYMENTS_FREQ);
+    $eta = ($mining->last_payout + YAAMP_PAYMENTS_FREQ) - time();
+    $eta_mn = round($eta / 60);
 
-			if (YAAMP_RENTAL)
-				showItemHeader(controller()->id=='renting' && $action=='admin', '/renting/admin', 'Jobs');
+    echo '      <div class="navbar-text ms-auto text-light small d-none d-lg-block bg-secondary bg-opacity-25 rounded px-2 py-1">';
+    echo '        <i class="fa fa-clock me-1 text-info"></i> Next Payout: <span class="fw-bold">' . $nextpayment . '</span> (' . $eta_mn . ' min)';
+    echo '      </div>';
 
-			if (YAAMP_ALLOW_EXCHANGE)
-				showItemHeader(controller()->id=='trading', '/trading', 'Trading');
-
-			if (YAAMP_USE_NICEHASH_API)
-				showItemHeader(controller()->id=='nicehash', '/nicehash', 'Nicehash');
-
-			showItemHeader(controller()->id=='logout', '/admin/logout', 'Logout');
-		}
-		else {
-			showItemHeader(controller()->id=='login', '/admin/login', 'Login');
-		}
-	}
-
-	echo '<span style="float: right;">';
-
-	$mining = getdbosql('db_mining');
-	$nextpayment = date('H:i T', $mining->last_payout+YAAMP_PAYMENTS_FREQ);
-	$eta = ($mining->last_payout+YAAMP_PAYMENTS_FREQ) - time();
-	$eta_mn = 'in '.round($eta / 60).' minutes';
-
-	echo '<span id="nextpayout" style="font-size: .8em;" title="'.$eta_mn.'">Next Payout: '.$nextpayment.'</span>';
-
-	echo "</div>";
-	echo "</div>";
+    echo '    </div>';
+    echo '  </div>';
+    echo '</nav>';
 }
 
 function showPageFooter()
 {
-	echo '<div class="footer">';
 	$year = date("Y", time());
-
-	echo "<p>&copy; $year ".YAAMP_SITE_NAME.' - '.
-		'<a href="https://github.com/Kudaraidee/yiimp">Open source Project</a></p>';
-
-	echo '</div><!-- footer -->';
+	echo '<footer class="footer mt-auto py-4 bg-dark text-white border-top border-secondary border-opacity-25">';
+    echo '  <div class="container text-center">';
+    echo '    <div class="row">';
+    echo '      <div class="col-md-6 text-md-start mb-3 mb-md-0">';
+    echo "        <span class='text-muted small'>&copy; $year " . YAAMP_SITE_NAME . " - </span>";
+    echo '        <a href="https://github.com/Kudaraidee/yiimp" class="text-info text-decoration-none small"><i class="fab fa-github me-1"></i>Open source Project</a>';
+    echo '      </div>';
+    echo '      <div class="col-md-6 text-md-end">';
+    echo '        <span class="text-muted small">Powered by <a href="/" class="text-primary text-decoration-none fw-bold">' . YAAMP_SITE_NAME . '</a></span>';
+    echo '      </div>';
+    echo '    </div>';
+    echo '  </div>';
+	echo '</footer>';
 }
 
 

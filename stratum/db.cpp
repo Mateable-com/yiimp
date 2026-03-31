@@ -208,7 +208,7 @@ void db_update_coinds(YAAMP_DB *db)
 		"reward_mul, symbol, auxpow, actual_ttf, network_ttf, usememorypool, hasmasternodes, algo, symbol2, "
 		"rpccurl, rpcssl, rpccert, account, multialgos, max_miners, max_shares, usesegwit, "
 		"auto_exchange, enable_rpcdebug, personalization, powlimit_bits, block_time, usemweb "
-		"FROM coins WHERE enable AND auto_ready AND algo='%s' ORDER BY index_avg", g_stratum_algo);
+		"FROM coins WHERE enable AND auto_ready AND (algo='%s' OR multialgos=1) ORDER BY index_avg", g_stratum_algo);
 
 	MYSQL_RES *result = mysql_store_result(&db->mysql);
 	if(!result) yaamp_error("Cant query database");

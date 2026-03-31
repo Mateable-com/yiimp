@@ -1,34 +1,29 @@
 <?php
 $defaultalgo = user()->getState('yaamp-algo');
-echo "<div class='main-left-box'>";
-echo "<div class='main-left-title'>Pool Status</div>";
-echo "<div class='main-left-inner'>";
-showTableSorter('maintable1', "{
-    tableClass: 'dataGrid2',
-    textExtraction: {
-        4: function(node, table, n) { return $(node).attr('data'); },
-        8: function(node, table, n) { return $(node).attr('data'); }
-    }
-}");
+
+echo '<div class="card mb-4 shadow-sm">';
+echo '  <div class="card-header bg-dark text-white fw-bold py-2"><i class="fa fa-chart-line me-2"></i>Pool Status</div>';
+echo '  <div class="card-body p-0 table-responsive">';
+
+echo '<table class="table table-hover table-sm mb-0" id="maintable1">';
 echo <<<END
-<thead>
+<thead class="table-light">
 <tr>
-<th>Coins</th>
-<th data-sorter="numeric" align="center">Auto Exchanged</th>
-<th data-sorter="numeric" align="center">Minimum Payout</th>
-<th data-sorter="numeric" align="center">Port</th>
-<th data-sorter="numeric" align="center">Users (Active)</th>
-<th data-sorter="numeric" align="center">Workers<br/>Share/Solo</th>
-<th data-sorter="numeric" align="center">Pool HashRate<br/>Share/Solo/Total</th>
-<th data-sorter="numeric" align="center">Network Hashrate</th>
-<th data-sorter="currency" align="center">Fees<br/>Share/Solo</th>
-<!--<th data-sorter="currency" class="estimate" align="right">Current<br />Estimate</th>-->
-<!--<th data-sorter="currency" >Norm</th>-->
-<!--<th data-sorter="currency" class="estimate" align="right">24 Hours<br />Estimated</th>-->
-<th data-sorter="currency"align="center">24 Hours<br />Actual</th>
+<th class="ps-3">Algorithm / Coin</th>
+<th class="text-center">Exchange</th>
+<th class="text-center">Min Payout</th>
+<th class="text-center">Port</th>
+<th class="text-center">Users</th>
+<th class="text-center">Workers<br/><small class="text-muted">(Shared/Solo)</small></th>
+<th class="text-center">Pool HashRate<br/><small class="text-muted">(Shared/Solo/Total)</small></th>
+<th class="text-center">Network Hash</th>
+<th class="text-center">Fees</th>
+<th class="text-end pe-3">24h Actual*</th>
 </tr>
 </thead>
+<tbody>
 END;
+
 $best_algo = '';
 $best_norm = 0;
 $algos = array();
@@ -60,187 +55,133 @@ function cmp($a, $b)
 }
 
 usort($algos, 'cmp');
+
 $total_coins = 0;
+$total_users = 0;
 $total_workers = 0;
 $total_solo_workers = 0;
 $showestimates = false;
-echo "<tbody>";
 
-$total_coins = 0; $total_users = 0; $total_workers = 0; $total_solo_workers = 0;
 foreach ($algos as $item)
 {
     $norm = $item[0];
     $algo = $item[1];
-    $coinsym = '';
+    
     $coins = getdbocount('db_coins', "enable and visible and auto_ready and algo=:algo", array(
         ':algo' => $algo
     ));
-    if ($coins == 2)
-    {
-
-        // If we only mine one coin, show it...
-        $coin = getdbosql('db_coins', "enable and visible and auto_ready and algo=:algo", array(
-            ':algo' => $algo
-        ));
-        $coinsym = empty($coin->symbol2) ? $coin->symbol : $coin->symbol2;
-        $coinsym = '<span title="' . $coin->name . '">' . $coinsym . '</a>';
-    }
-
-  
+    
     if (!$coins) continue;
+
     $workers = getdbocount('db_workers', "algo=:algo and not password like '%m=solo%'", array(':algo' => $algo));
     $solo_workers = getdbocount('db_workers',"algo=:algo and password like '%m=solo%'", array(':algo'=>$algo));
-    $hashrate = controller()
-        ->memcache
-        ->get_database_scalar("current_hashrate-$algo", "select hashrate from hashrate where algo=:algo order by time desc limit 1", array(
-        ':algo' => $algo
-    ));
-    $hashrate_sfx = $hashrate ? Itoa2($hashrate) . 'h/s' : '-';
-    $price = controller()
-        ->memcache
-        ->get_database_scalar("current_price-$algo", "select price from hashrate where algo=:algo order by time desc limit 1", array(
-        ':algo' => $algo
-    ));
+    
+    $hashrate = controller()->memcache->get_database_scalar("current_hashrate-$algo", "select hashrate from hashrate where algo=:algo order by time desc limit 1", array(':algo' => $algo));
+    $price = controller()->memcache->get_database_scalar("current_price-$algo", "select price from hashrate where algo=:algo order by time desc limit 1", array(':algo' => $algo));
     $price = $price ? mbitcoinvaluetoa(take_yaamp_fee($price, $algo)) : '-';
     $norm = mbitcoinvaluetoa($norm);
+    
     $t = time() - 24 * 60 * 60;
-    $avgprice = controller()
-        ->memcache
-        ->get_database_scalar("current_avgprice-$algo", "select avg(price) from hashrate where algo=:algo and time>$t", array(
-        ':algo' => $algo
-    ));
-    $avgprice = $avgprice ? mbitcoinvaluetoa(take_yaamp_fee($avgprice, $algo)) : '-';
-    $total1 = controller()
-        ->memcache
-        ->get_database_scalar("current_total-$algo", "SELECT SUM(amount*price) AS total FROM blocks WHERE time>$t AND algo=:algo AND NOT category IN ('orphan','stake','generated')", array(
-        ':algo' => $algo
-    ));
-    $hashrate1 = controller()
-        ->memcache
-        ->get_database_scalar("current_hashrate1-$algo", "select avg(hashrate) from hashrate where time>$t and algo=:algo", array(
-        ':algo' => $algo
-    ));
+    $total1 = controller()->memcache->get_database_scalar("current_total-$algo", "SELECT SUM(amount*price) AS total FROM blocks WHERE time>$t AND algo=:algo AND NOT category IN ('orphan','stake','generated')", array(':algo' => $algo));
+    $hashrate1 = controller()->memcache->get_database_scalar("current_hashrate1-$algo", "select avg(hashrate) from hashrate where time>$t and algo=:algo", array(':algo' => $algo));
+    
     $algo_unit_factor = yaamp_algo_mBTC_factor($algo);
-    $btcmhday1 = $hashrate1 != 0 ? mbitcoinvaluetoa($total1 / $hashrate1 * 1000000 * 1000 * $algo_unit_factor) : '';
+    $btcmhday1 = $hashrate1 != 0 ? mbitcoinvaluetoa($total1 / $hashrate1 * 1000000 * 1000 * $algo_unit_factor) : '0.000';
+    
     $fees = yaamp_fee($algo);
     $fees_solo = yaamp_fee_solo($algo);
     $port = getAlgoPort($algo);
 
-    if ($defaultalgo == $algo) echo "<tr style='cursor: pointer; background-color: #d9d9d9;' onclick='javascript:select_algo(\"$algo\")'>";
-    else echo "<tr style='cursor: pointer' class='ssrow' onclick='javascript:select_algo(\"$algo\")'>";
-    echo "<td style='font-size: 110%; background-color: #f2f2f2;'><b>$algo</b></td>";
-    echo "<td align=center style='font-size: .8em; background-color: #f2f2f2;'></td>";
-    echo "<td align=center style='font-size: .8em; background-color: #f2f2f2;'></td>";
-    echo "<td align=center style='font-size: .8em; background-color: #f2f2f2;'></td>";
-    echo "<td align=center style='font-size: .8em; background-color: #f2f2f2;'></td>";
-    echo '<td align="center" style="font-size: .8em; background-color: #f2f2f2;"></td>';
-    echo '<td align="center" style="font-size: .8em; background-color: #f2f2f2;"></td>';
-    echo "<td align=center style='font-size: .8em; background-color: #f2f2f2;'></td>";
-    echo "<td align=center style='font-size: .8em; background-color: #f2f2f2;'></td>";
-    if ($algo == $best_algo) echo '<td class="estimate" align="center" style="font-size: .8em; background-color: #f2f2f2;" title="normalized ' . $norm . '"><b>' . $price . '</b></td>';
-    else if ($norm > 0) echo '<td class="estimate" align="center" style="font-size: .8em; background-color: #f2f2f2;" title="normalized ' . $norm . '">' . $price . '</td>';
-    else echo '<td class="estimate" align="center" style="font-size: .8em; background-color: #f2f2f2;"></td>';
-    echo '<td class="estimate" align="center" style="font-size: .8em; background-color: #f2f2f2;"></td>';
-    if ($algo == $best_algo) echo '<td align="center" style="font-size: .8em; background-color: #f2f2f2;" data="' . $btcmhday1 . '"><b>' . $btcmhday1 . '*</b></td>';
-    else echo '<td align="center" style="font-size: .8em; background-color: #f2f2f2;" data="' . $btcmhday1 . '">' . $btcmhday1 . '</td>';
+    $rowClass = ($defaultalgo == $algo) ? 'table-primary' : '';
+    
+    echo "<tr class='$rowClass' style='cursor: pointer;' onclick='javascript:select_algo(\"$algo\")'>";
+    echo "<td class='ps-3 fw-bold'>$algo</td>";
+    echo "<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>";
+    
+    $bestBadge = ($algo == $best_algo) ? '<span class="badge bg-success ms-1">Best</span>' : '';
+    echo "<td class='text-end pe-3 fw-bold' data='$btcmhday1'>$btcmhday1 $bestBadge</td>";
     echo "</tr>";
-    if ($coins > 0)
+
+    $list = getdbolist('db_coins', "enable and visible and auto_ready and algo=:algo order by index_avg desc", array(':algo' => $algo));
+
+    foreach ($list as $coin)
     {
-        $list = getdbolist('db_coins', "enable and visible and auto_ready and algo=:algo order by index_avg desc", array(
-            ':algo' => $algo
-        ));
+        $name = substr($coin->name, 0, 20);
+        $symbol = $coin->getOfficialSymbol();
+        
+        echo "<tr>";
+        echo "<td class='ps-4 small'><img width='16' src='" . $coin->image . "' class='me-2'><b>$name</b> <span class='text-muted'>($symbol)</span></td>";
+        
+        $port_db = getdbosql('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
+        $port_count = $port_db ? 1 : 0;
 
-        foreach ($list as $coin)
-        {
-            $name = substr($coin->name, 0, 20);
-            $symbol = $coin->getOfficialSymbol();
-            echo "<td align='left' valign='top' style='font-size: .8em;'><img width='10' src='" . $coin->image . "'>  <b>$name ($coin->symbol)</b> </td>";
-            $port_count = getdbocount('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
-            $port_db = getdbosql('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
+        echo "<td class='text-center'>";
+        echo ($coin->auto_exchange == 1) ? '<i class="fa fa-check-circle text-success"></i>' : '<i class="fa fa-times-circle text-danger"></i>';
+        echo "</td>";
+        
+        $min_payout = max(floatval(YAAMP_PAYMENTS_MINI), floatval($coin->payout_min));
+        echo "<td class='text-center small fw-bold'>$min_payout $symbol</td>";
 
-            $auto_exchange = $coin->auto_exchange;
-            if ($auto_exchange != 1) echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/cancel.png'></td>";
-            else echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/ok.png'></td>";
-			
-			$min_payout = max(floatval(YAAMP_PAYMENTS_MINI), floatval($coin->payout_min));
-			echo "<td align='center' style='font-size: .8em;'><b>".$min_payout." $symbol</b></td>";
-
-			if ($port_count >= 1) 
-				echo "<td align='center' style='font-size: .8em;'><b>".$port_db->port."</b></td>";
-			else 
-				echo "<td align='center' style='font-size: .8em;'><b>$port</b></td>";
-            
-			$users_total = getdbocount('db_accounts', "id IN (SELECT DISTINCT userid FROM workers)");
-			$users_coins = getdbocount('db_accounts', "coinid=:coinid and (id IN (SELECT DISTINCT userid FROM workers))", array(':coinid' => $coin->id));
-			if ($port_count >= 1) 
-				echo "<td align='center' style='font-size: .8em;'>$users_coins</td>";
-			else	
-				echo "<td align='center' style='font-size: .8em;'>$users_total</td>";
-            
-			$workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => (is_null($port_db)?0 :$port_db->pid)));
-            $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => (is_null($port_db)?0 :$port_db->pid)));
-            if ($port_count == 1) 
-	    		echo "<td align='center' style='font-size: .8em;'>$workers_coins / $solo_workers_coins </td>";
-			else
-				echo "<td align='center' style='font-size: .8em;'>$workers / $solo_workers </td>";
-			
-            $pool_hash = yaamp_coin_rate($coin->id);
-            $pool_hash_sfx = $pool_hash ? Itoa2($pool_hash) . 'h/s' : '0 h/s';
-			$pool_shared_hash = yaamp_coin_shared_rate($coin->id);
-			$pool_shared_hash_sfx = $pool_shared_hash ? Itoa2($pool_shared_hash) . 'h/s' : '0 h/s';
-			$pool_solo_hash = yaamp_coin_solo_rate($coin->id);
-			$pool_solo_hash_sfx = $pool_solo_hash ? Itoa2($pool_solo_hash) . 'h/s' : '0 h/s';
-			echo "<td align='center' style='font-size: .8em;'>$pool_shared_hash_sfx / $pool_solo_hash_sfx / $pool_hash_sfx</td>";
-            
-            $min_ttf = $coin->network_ttf > 0 ? min($coin->actual_ttf, $coin->network_ttf) : $coin->actual_ttf;
-
-            $network_hash = yaamp_coin_nethash($coin);
-            $network_hash = $network_hash ? Itoa2($network_hash) . 'h/s' : '';
-            echo "<td align='center' style='font-size: .8em;' data='$pool_hash'>$network_hash</td>";
-            echo "<td align='center' style='font-size: .8em;'>{$fees}% / {$fees_solo}% </td>";
-            $btcmhd = yaamp_profitability($coin);
-            $btcmhd = mbitcoinvaluetoa($btcmhd);
-            echo "<td align='center' style='font-size: .8em;'>$btcmhd</td>";
-            echo "</tr>";
-        }
+        $displayPort = $port_db ? $port_db->port : $port;
+        echo "<td class='text-center small fw-bold text-primary'>$displayPort</td>";
+        
+        $users_total = getdbocount('db_accounts', "id IN (SELECT DISTINCT userid FROM workers)");
+        echo "<td class='text-center small'>$users_total</td>";
+        
+        $workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => ($port_db ? $port_db->pid : 0)));
+        $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => ($port_db ? $port_db->pid : 0)));
+        echo "<td class='text-center small text-muted'>$workers_coins / $solo_workers_coins</td>";
+        
+        $pool_hash = yaamp_coin_rate($coin->id);
+        $pool_hash_sfx = $pool_hash ? Itoa2($pool_hash) : '0';
+        $pool_shared_hash = yaamp_coin_shared_rate($coin->id);
+        $pool_shared_hash_sfx = $pool_shared_hash ? Itoa2($pool_shared_hash) : '0';
+        $pool_solo_hash = yaamp_coin_solo_rate($coin->id);
+        $pool_solo_hash_sfx = $pool_solo_hash ? Itoa2($pool_solo_hash) : '0';
+        echo "<td class='text-center small fw-bold text-nowrap'>$pool_shared_hash_sfx / $pool_solo_hash_sfx / $pool_hash_sfx</td>";
+        
+        $network_hash = yaamp_coin_nethash($coin);
+        $network_hash_sfx = $network_hash ? Itoa2($network_hash) : '-';
+        echo "<td class='text-center small text-muted'>$network_hash_sfx</td>";
+        echo "<td class='text-center small'>{$fees}% / {$fees_solo}%</td>";
+        
+        $btcmhd = mbitcoinvaluetoa(yaamp_profitability($coin));
+        echo "<td class='text-end pe-3 small text-muted'>$btcmhd</td>";
+        echo "</tr>";
     }
 
-	$total_coins += $coins;
-	$total_users = $users_total;
-	$total_workers += $workers;
-	$total_solo_workers += $solo_workers;
+    $total_coins += $coins;
+    $total_workers += $workers;
+    $total_solo_workers += $solo_workers;
 }
 
+// Final row with totals
+$total_users = getdbocount('db_accounts', "id IN (SELECT DISTINCT userid FROM workers)");
 echo "</tbody>";
-
-if ($defaultalgo == 'all') echo "<tr style='cursor: pointer; background-color: #d9d9d9;' onclick='javascript:select_algo(\"all\")'>";
-else echo "<tr style='cursor: pointer' class='ssrow' onclick='javascript:select_algo(\"all\")'>";
-echo "<td><b>all</b></td>";
+echo "<tfoot class='table-light fw-bold'>";
+echo "<tr>";
+echo "<td class='ps-3'>Totals</td>";
 echo "<td></td>";
-echo "<td align=center style='font-size: .8em;'>$total_coins Coins</td>";
+echo "<td class='text-center small'>$total_coins Coins</td>";
 echo "<td></td>";
-echo "<td align=center style='font-size: .8em;'>$total_users Users</td>";
-echo "<td align=center style='font-size: .8em;'>Shared: $total_workers workers<br>Solo: $total_solo_workers workers</td>";
-echo "<td></td>";
-echo '<td class="estimate"></td>';
-echo '<td class="estimate"></td>';
-echo "<td></td>";
-echo "<td></td>";
-echo "<td></td>";
+echo "<td class='text-center small'>$total_users Users</td>";
+echo "<td class='text-center small text-muted'>$total_workers / $total_solo_workers</td>";
+echo "<td></td><td></td><td></td><td></td>";
 echo "</tr>";
+echo "</tfoot>";
+
 echo "</table>";
-echo '<p style="font-size: .8em;">&nbsp;* values in mBTC/MH/day, per GH for sha & blake algos</p>';
-echo "</div></div><br />";
-?>
+echo "</div>"; // card-body
+echo '<div class="card-footer bg-light py-2 small text-muted">';
+echo '* values in mBTC/MH/day (or GH/day for sha/blake algos)';
+echo '</div>';
+echo "</div>"; // card
 
-<?php
-if (!$showestimates):
-?>
-
-<style type="text/css">
-#maintable1 .estimate { display: none; }
-</style>
-
-<?php
-endif;
+showTableSorter('maintable1', "{
+    tableClass: 'table table-hover table-sm mb-0',
+    textExtraction: {
+        4: function(node, table, n) { return $(node).attr('data'); },
+        8: function(node, table, n) { return $(node).attr('data'); }
+    }
+}");
 ?>

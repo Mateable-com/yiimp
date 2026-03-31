@@ -9,7 +9,7 @@
 //	}
 //}
 
-static YAAMP_WORKER *share_find_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, int height, int coinid)
+static YAAMP_WORKER *share_find_worker(int userid, int workerid, YAAMP_JOB *job, bool valid, int height, int coinid)
 {
 	int current_coinid = coinid;
 
@@ -22,8 +22,8 @@ static YAAMP_WORKER *share_find_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, boo
 		YAAMP_WORKER *worker = (YAAMP_WORKER *)li->data;
 		if(worker->deleted) continue;
 
-		if(	worker->userid == client->userid &&
-			worker->workerid == client->workerid &&
+		if(	worker->userid == userid &&
+			worker->workerid == workerid &&
 			worker->valid == valid)
 		{
 			if(!job && !worker->coinid && !worker->remoteid)
@@ -41,18 +41,19 @@ static YAAMP_WORKER *share_find_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, boo
 	return NULL;
 }
 
-static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *ntime, double share_diff, int error_number, int height, int coinid, bool isaux)
+static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *ntime, double share_diff, int error_number, int height, int coinid, bool isaux, int userid_override = 0)
 {
 //	check_job(job);
 	g_list_worker.Enter();
 
-	YAAMP_WORKER *worker = share_find_worker(client, job, valid, height, coinid);
+	int userid = userid_override ? userid_override : client->userid;
+	YAAMP_WORKER *worker = share_find_worker(userid, client->workerid, job, valid, height, coinid);
 	if(!worker)
 	{
 		worker = new YAAMP_WORKER;
 		memset(worker, 0, sizeof(YAAMP_WORKER));
 
-		worker->userid = client->userid;
+		worker->userid = userid;
 		worker->workerid = client->workerid;
 		worker->coinid = coinid;
 		worker->remoteid = job? (job->remote? job->remote->id: 0): 0;
@@ -107,7 +108,12 @@ void share_add(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *extranonc
 				auxcoinid = templ->auxs[i]->coind->id;
 				auxcoinheight = templ->auxs[i]->coind->height;
 
-				share_add_worker(client, job, valid, ntime, share_diff, error_number, auxcoinheight, auxcoinid, true);
+				int aux_userid = 0;
+				if(client->aux_userids && client->aux_userids->count(auxcoinid)) {
+					aux_userid = (*client->aux_userids)[auxcoinid];
+				}
+
+				share_add_worker(client, job, valid, ntime, share_diff, error_number, auxcoinheight, auxcoinid, true, aux_userid);
 			}
 		}
 	}

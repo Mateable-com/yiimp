@@ -11,7 +11,8 @@ void coind_getauxblock(YAAMP_COIND *coind)
        (strcmp(coind->symbol, "QBC") == 0) ||
        (strcmp(coind->symbol2, "QBC") == 0) ||
        (strcmp(coind->symbol, "EAC") == 0) ||
-	   (strcmp(coind->symbol, "LCN") == 0)) {
+	   (strcmp(coind->symbol, "LCN") == 0) ||
+	   (strcmp(coind->rpcencoding, "AUX") == 0)) {
 		static char wallet_address[1028];
 		if (coind->wallet) sprintf(wallet_address, "[\"%s\"]", coind->wallet);
 
@@ -272,6 +273,7 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 	}
 
 	if(!strcmp(coind->symbol, "PPC")) strcpy(params, "[]");
+	else if(coind->multialgos) sprintf(params, "[{\"algo\":\"%s\"}]", g_stratum_algo);
 	else if(g_stratum_segwit) strcpy(params, "[{\"rules\":[\"segwit\"]}]");
        
 	coind->usemweb |= g_stratum_mweb;

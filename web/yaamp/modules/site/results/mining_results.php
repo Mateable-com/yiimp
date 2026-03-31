@@ -2,9 +2,9 @@
 
 function WriteBoxHeader($title)
 {
-    echo "<div class='main-left-box'>";
-    echo "<div class='main-left-title'>$title</div>";
-    echo "<div class='main-left-inner'>";
+    echo '<div class="card mb-4 shadow-sm">';
+    echo '  <div class="card-header bg-dark text-white fw-bold py-2"><i class="fa fa-microchip me-2"></i>' . $title . '</div>';
+    echo '  <div class="card-body p-0 table-responsive">';
 }
 
 $showrental = (bool) YAAMP_RENTAL;
@@ -12,7 +12,7 @@ $showrental = (bool) YAAMP_RENTAL;
 $algo = user()->getState('yaamp-algo');
 
 $total_rate   = yaamp_pool_rate();
-$total_rate_d = $total_rate ? 'at ' . Itoa2($total_rate) . 'h/s' : '';
+$total_rate_d = $total_rate ? 'at <span class="badge bg-info text-dark">' . Itoa2($total_rate) . 'h/s</span>' : '';
 
 if ($algo == 'all')
     $list = getdbolist('db_coins', "enable and visible order by auxpow asc,index_avg desc");
@@ -40,31 +40,24 @@ else
 ////////////////////////////////////////////////////////////////////////////////////
 
 $coin_count  = $count > 1 ? "on $count wallets" : 'on a single wallet';
-$miner_count = $worker > 1 ? "$worker miners" : "$worker miner";
-WriteBoxHeader("Mining $coin_count $total_rate_d, $miner_count");
+$miner_count = $worker > 1 ? '<span class="badge bg-primary ms-1">' . $worker . ' miners</span>' : '<span class="badge bg-primary ms-1">' . $worker . ' miner</span>';
+WriteBoxHeader("Mining $coin_count $total_rate_d $miner_count");
 
-showTableSorter('maintable3', "{
-    tableClass: 'dataGrid2',
-    textExtraction: {
-        3: function(node, table, n) { return $(node).attr('data'); },
-        6: function(node, table, n) { return $(node).attr('data'); },
-        7: function(node, table, n) { return $(node).attr('data'); }
-    }
-}");
-
+echo '<table class="table table-hover table-sm mb-0" id="maintable3">';
 echo <<<END
-<thead>
+<thead class="table-light">
 <tr>
 <th data-sorter=""></th>
 <th data-sorter="text">Name</th>
-<th align="right">Amount</th>
-<th data-sorter="numeric" align="right">Diff</th>
-<th align="right">Block</th>
-<th align="right">TTF***</th>
-<th data-sorter="numeric" align="right">Hash**</th>
-<th data-sorter="currency" align="right">Profit*</th>
+<th class="text-end">Amount</th>
+<th data-sorter="numeric" class="text-end">Diff</th>
+<th class="text-end">Block</th>
+<th class="text-end">TTF***</th>
+<th data-sorter="numeric" class="text-end">Hash**</th>
+<th data-sorter="currency" class="text-end">Profit*</th>
 </tr>
 </thead>
+<tbody>
 END;
 
 if ($algo != 'all' && $showrental) {
@@ -86,7 +79,7 @@ $separate_aux = 0;
 foreach ($list as $coin) {
     if($coin->auxpow && !$separate_aux) {
         $separate_aux = 1;
-        echo "<tr class='ssrow'><td></td><td>merged mined coins</td></tr>";
+        echo "<tr class='table-info text-center'><td colspan='8' class='fw-bold small text-uppercase py-1'>merged mined coins</td></tr>";
     }
 
     $name       = substr($coin->name, 0, 20);
@@ -134,7 +127,7 @@ foreach ($list as $coin) {
                 continue;
             $service_btcmhd = mbitcoinvaluetoa($service->price * 1000);
 
-            echo "<tr class='ssrow'>";
+            echo "<tr>";
             echo "<td width=18><img width=16 src='/images/btc.png'></td>";
             echo "<td><b>$service->name</b></td>";
             echo "<td></td>";
@@ -142,7 +135,7 @@ foreach ($list as $coin) {
             echo "<td></td>";
             echo "<td></td>";
             echo "<td></td>";
-            echo "<td align=right style='font-size: .8em;'><b>$service_btcmhd</b></td>";
+            echo "<td class='text-end small fw-bold'>$service_btcmhd</td>";
             echo "</tr>";
 
             unset($services[$i]);
@@ -150,26 +143,24 @@ foreach ($list as $coin) {
     }
 
     if (isset($price_rent) && $price_rent > $btcmhd) {
-        echo "<tr class='ssrow'>";
+        echo "<tr>";
         echo "<td width=18><img width=16 src='/images/btc.png'></td>";
         echo "<td><b>Rental</b></td>";
-        echo "<td align=right style='font-size: .8em;'><b>$amount_rent BTC</b></td>";
+        echo "<td class='text-end small fw-bold'>$amount_rent BTC</td>";
         echo "<td></td>";
         echo "<td></td>";
         echo "<td></td>";
-        echo "<td align=right style='font-size: .8em;'>$hashrate_jobs</td>";
-        echo "<td align=right style='font-size: .8em;'><b>$price_rent</b></td>";
+        echo "<td class='text-end small'>$hashrate_jobs</td>";
+        echo "<td class='text-end small fw-bold'>$price_rent</td>";
         echo "</tr>";
 
         unset($price_rent);
     }
 
-    if (!$coin->auto_ready)
-        echo "<tr style='opacity: 0.4;'>";
-    else
-        echo "<tr class='ssrow'>";
+    $rowStyle = !$coin->auto_ready ? 'opacity: 0.5;' : '';
+    echo "<tr style='$rowStyle'>";
 
-    echo '<td width="18">';
+    echo '<td width="18" class="text-center">';
     echo $coin->createExplorerLink('<img width="16" src="' . $coin->image . '">');
     echo '</td>';
 
@@ -178,55 +169,55 @@ foreach ($list as $coin) {
         $owed2  = bitcoinvaluetoa($owed - $coin->balance);
         $symbol = $coin->getOfficialSymbol();
         $title  = "We are short of this currency ($owed2 $symbol). Please switch to another currency until we find more $symbol blocks.";
-        echo "<td><b><a href=\"/site/block?id={$coin->id}\" title=\"$title\" style=\"color: #c55;\">$name</a></b><span style=\"font-size: .8em;\"> ({$coin->algo})</span></td>";
+        echo "<td><a href=\"/site/block?id={$coin->id}\" title=\"$title\" class=\"text-danger fw-bold text-decoration-none\">$name</a><span class=\"small text-muted\"> ({$coin->algo})</span></td>";
     } else {
-		echo "<td><b><a href='/site/block?id=$coin->id'>$name</a></b><span style='font-size: .8em'> ($coin->algo)</span>".
-			(($coin->auto_exchange)?"":"<span style='font-size: .8em; color: red; font-weight: bold;'>(no autotrade)</span>").
+		echo "<td><a href='/site/block?id=$coin->id' class='text-decoration-none fw-bold'>$name</a><span class='small text-muted'> ($coin->algo)</span>".
+			(($coin->auto_exchange)?"":" <span class='badge bg-warning text-dark small' style='font-size: 0.7em;'>no autotrade</span>").
 			"</td>";
     }
-    echo "<td align=right style='font-size: .8em;'><b>$reward $coin->symbol_show</b></td>";
+    echo "<td class='text-end small fw-bold'>$reward $coin->symbol_show</td>";
 
     $title = "POW $coin->difficulty";
     if ($coin->rpcencoding == 'POS')
         $title .= "\nPOS $coin->difficulty_pos";
 
-    echo '<td align="right" style="font-size: .8em;" data="' . $coin->difficulty . '" title="' . $title . '">' . $difficulty . '</td>';
+    echo '<td class="text-end small" data="' . $coin->difficulty . '" title="' . $title . '">' . $difficulty . '</td>';
 
     if (!empty($coin->errors))
-        echo "<td align=right style='font-size: .8em; color: red;' title='$coin->errors'>$height</td>";
+        echo "<td class='text-end small text-danger fw-bold' title='$coin->errors'>$height</td>";
     else
-        echo "<td align=right style='font-size: .8em;'>$height</td>";
+        echo "<td class='text-end small'>$height</td>";
 
     if (!YAAMP_ALLOW_EXCHANGE && !empty($real_ttf) && !empty($shared_real_ttf) && !empty($solo_real_ttf))
-        echo '<td align="right" style="font-size: .8em ;" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
+        echo '<td class="text-end small" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
 Solo: '.$solo_real_ttf.' at '.$pool_solo_hash_sfx.'
 Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
     elseif (!empty($real_ttf) && !empty($shared_real_ttf) && !empty($solo_real_ttf))
-        echo '<td align="right" style="font-size: .8em ;" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
+        echo '<td class="text-end small" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
 Solo: '.$solo_real_ttf.' at '.$pool_solo_hash_sfx.'
 Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
     elseif (!empty($real_ttf) && !empty($shared_real_ttf) && !empty($solo_real_ttf))
-        echo '<td align="right" style="font-size: .8em ;" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
+        echo '<td class="text-end small" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
 Solo: '.$solo_real_ttf.' at '.$pool_solo_hash_sfx.'
 Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
     elseif (!empty($real_ttf) && !empty($shared_real_ttf))
-        echo '<td align="right" style="font-size: .8em ;" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
+        echo '<td class="text-end small" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
 Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
     elseif (!empty($real_ttf) && !empty($solo_real_ttf))
-        echo '<td align="right" style="font-size: .8em ;" title="Solo: '.$solo_real_ttf.' at '.$pool_solo_hash_sfx.'
+        echo '<td class="text-end small" title="Solo: '.$solo_real_ttf.' at '.$pool_solo_hash_sfx.'
 Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
     elseif (!empty($real_ttf))
-        echo '<td align="right" style="font-size: .8em ;" title="Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
+        echo '<td class="text-end small" title="Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
     else
-        echo '<td align="right" style="font-size: .8em;" title="At current pool speed">' . $pool_ttf . '</td>';
+        echo '<td class="text-end small" title="At current pool speed">' . $pool_ttf . '</td>';
 
     if ($coin->auxpow && $coin->auto_ready)
-        echo "<td align=right style='font-size: .8em; opacity: 0.6;' title='merge mined\n$network_hash_string' data='$pool_hash'>$pool_hash_sfx</td>";
+        echo "<td class='text-end small text-muted' title='merge mined\n$network_hash_string' data='$pool_hash'>$pool_hash_sfx</td>";
     else
-        echo "<td align=right style='font-size: .8em;' title='Network: $network_hash_string' data='$pool_hash'>$pool_hash_sfx</td>";
+        echo "<td class='text-end small' title='Network: $network_hash_string' data='$pool_hash'>$pool_hash_sfx</td>";
 
     $btcmhd = mbitcoinvaluetoa($btcmhd);
-    echo "<td align=right style='font-size: .8em;' data='$btcmhd'><b>$btcmhd</b></td>";
+    echo "<td class='text-end small fw-bold' data='$btcmhd'>$btcmhd</td>";
     echo "</tr>";
 }
 
@@ -234,7 +225,7 @@ if (controller()->admin && $services) {
     foreach ($services as $i => $service) {
         $service_btcmhd = mbitcoinvaluetoa($service->price * 1000);
 
-        echo "<tr class='ssrow'>";
+        echo "<tr>";
         echo "<td width=18><img width=16 src='/images/btc.png'></td>";
         echo "<td><b>$service->name</b></td>";
         echo "<td></td>";
@@ -242,33 +233,42 @@ if (controller()->admin && $services) {
         echo "<td></td>";
         echo "<td></td>";
         echo "<td></td>";
-        echo "<td align=right style='font-size: .8em;'><b>$service_btcmhd</b></td>";
+        echo "<td class='text-end small fw-bold'>$service_btcmhd</td>";
         echo "</tr>";
     }
 }
 
 if (isset($price_rent) && $showrental) {
-    echo "<tr class='ssrow'>";
+    echo "<tr>";
     echo "<td width=18><img width=16 src='/images/btc.png'></td>";
     echo "<td><b>Rental</b></td>";
-    echo "<td align=right style='font-size: .8em;'><b>$amount_rent BTC</b></td>";
+    echo "<td class='text-end small fw-bold'>$amount_rent BTC</td>";
     echo "<td></td>";
     echo "<td></td>";
     echo "<td></td>";
-    echo "<td align=right style='font-size: .8em;'>$hashrate_jobs</td>";
-    echo "<td align=right style='font-size: .8em;'><b>$price_rent</b></td>";
+    echo "<td class='text-end small'>$hashrate_jobs</td>";
+    echo "<td class='text-end small fw-bold'>$price_rent</td>";
     echo "</tr>";
 
     unset($price_rent);
 }
 
 
+echo "</tbody>";
 echo "</table>";
+echo "</div>"; // card-body
+echo '<div class="card-footer bg-light py-2 small text-muted">';
+echo '*** estimated average time to find a block at full pool speed | ';
+echo '** approximate from the last 5 minutes submitted shares | ';
+echo '* 24h estimation from net difficulty in mBTC/MH/day';
+echo '</div>';
+echo "</div>"; // card
 
-echo '<p style="font-size: .8em;">
-    &nbsp;*** estimated average time to find a block at full pool speed<br/>
-    &nbsp;** approximate from the last 5 minutes submitted shares<br/>
-    &nbsp;* 24h estimation from net difficulty in mBTC/MH/day (GH/day for sha & blake algos)<br>
-</p>';
-
-echo "</div></div><br>";
+showTableSorter('maintable3', "{
+    tableClass: 'table table-hover table-sm mb-0',
+    textExtraction: {
+        3: function(node, table, n) { return $(node).attr('data'); },
+        6: function(node, table, n) { return $(node).attr('data'); },
+        7: function(node, table, n) { return $(node).attr('data'); }
+    }
+}");

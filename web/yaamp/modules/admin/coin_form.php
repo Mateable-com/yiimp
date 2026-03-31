@@ -453,8 +453,8 @@ echo CUFHtml::closeCtrlHolder();
 
 echo CUFHtml::openActiveCtrlHolder($coin, 'rpcencoding');
 echo CUFHtml::activeLabelEx($coin, 'rpcencoding');
-echo CUFHtml::activeTextField($coin, 'rpcencoding', array('maxlength'=>5,'style'=>'width: 60px;'));
-echo '<p class="formHint2">POW/POS</p>';
+echo CUFHtml::activeDropDownList($coin, 'rpcencoding', array('POW'=>'POW', 'POS'=>'POS', 'ZEC'=>'ZEC', 'DCR'=>'DCR', 'AUX'=>'AUX'), array('style'=>'width: 70px;'));
+echo '<p class="formHint2">POW/POS/ZEC/DCR/AUX (AUX for createauxblock/submitauxblock)</p>';
 echo CUFHtml::closeCtrlHolder();
 
 echo CUFHtml::openActiveCtrlHolder($coin, 'dedicatedport');

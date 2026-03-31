@@ -1,7 +1,7 @@
 
 CC= gcc -no-pie 
 
-CFLAGS= -g -march=native -I./
+CFLAGS= -g -O2 -fcommon -fno-tree-loop-vectorize -fno-strict-aliasing -march=native -I./
 SQLFLAGS= `mysql_config --cflags --libs`
 
 #CFLAGS=-c -O2 -I /usr/include/mysql

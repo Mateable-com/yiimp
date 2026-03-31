@@ -553,6 +553,7 @@ void *client_thread(void *p)
 		return NULL;
 	}
 	memset(client, 0, sizeof(YAAMP_CLIENT));
+	client->aux_userids = new std::map<int, int>();
 
 	client->reconnectable = true;
 	client->speed = YAAMP_CLIENT_MINSPEED * 10;

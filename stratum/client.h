@@ -71,6 +71,12 @@ public:
 	std::vector<std::string> coins_mining_list;
 	std::vector<std::string> coins_ignore_list;
 
+	std::map<int, int> *aux_userids;
+
+	~YAAMP_CLIENT() {
+		if(aux_userids) delete aux_userids;
+	}
+
 	double difficulty_actual;
 	double difficulty_remote;
 	double difficulty_written;

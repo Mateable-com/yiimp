@@ -34,6 +34,58 @@ void db_check_coin_symbol(YAAMP_DB *db, char* symbol)
 	}
 }
 
+void db_add_aux_user(YAAMP_DB *db, YAAMP_CLIENT *client, const char *symbol_str, const char *address_str)
+{
+	char symbol[16];
+	char address[1024];
+
+	strncpy(symbol, symbol_str, 15);
+	symbol[15] = 0;
+	strncpy(address, address_str, 1023);
+	address[1023] = 0;
+
+	db_check_user_input(symbol);
+	db_check_user_input(address);
+
+	if(strlen(address) < MIN_ADDRESS_LEN) return;
+
+	int coinid = 0;
+	bool found = false;
+	
+	g_list_coind.Enter();
+	for(CLI li = g_list_coind.first; li; li = li->next)
+	{
+		YAAMP_COIND *coind = (YAAMP_COIND *)li->data;
+		if(!strcmp(coind->symbol, symbol) || !strcmp(coind->symbol2, symbol)) {
+			coinid = coind->id;
+			found = true;
+			break;
+		}
+	}
+	g_list_coind.Leave();
+	
+	if(!found) return;
+
+	int userid = 0;
+	db_query(db, "SELECT id FROM accounts WHERE username='%s'", address);
+	MYSQL_RES *result = mysql_store_result(&db->mysql);
+	if(result) {
+		MYSQL_ROW row = mysql_fetch_row(result);
+		if(row) userid = atoi(row[0]);
+		mysql_free_result(result);
+	}
+
+	if(!userid) {
+		db_query(db, "INSERT INTO accounts (username, coinsymbol, balance, donation, hostaddr, coinid) values ('%s', '%s', 0, %d, '%s', %d)",
+			address, symbol, client->donation, client->sock->ip, coinid);
+		userid = (int)mysql_insert_id(&db->mysql);
+	}
+
+	if(userid && coinid && client->aux_userids) {
+		(*client->aux_userids)[coinid] = userid;
+	}
+}
+
 void db_add_user(YAAMP_DB *db, YAAMP_CLIENT *client)
 {
 	db_clean_string(db, client->username);
@@ -64,8 +116,16 @@ void db_add_user(YAAMP_DB *db, YAAMP_CLIENT *client)
 			else if (command.at(0) == "s") {
 				symbol = command.at(1);
 			}
-			else if (command.at(0) == "m") {
+			else if (command.at(0) == "m" || command.at(0) == "w") {
 				if (command.at(1) == "solo") client->solo = true;
+				else {
+					size_t p = command.at(1).find(':');
+					if(p != string::npos) {
+						string s = command.at(1).substr(0, p);
+						string a = command.at(1).substr(p+1);
+						db_add_aux_user(db, client, s.c_str(), a.c_str());
+					}
+				}
 			}
 			// set list of specific coins to mine only
 			else if (command.at(0) == "mc") {

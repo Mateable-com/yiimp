@@ -152,7 +152,7 @@ bool coind_submitgetauxblock(YAAMP_COIND *coind, const char *hash, const char *b
 	json_value *json = NULL;
 	if ((strcmp(coind->symbol, "XMY") == 0) || (strcmp(coind->symbol2, "XMY") == 0) ||
 		(strcmp(coind->symbol, "QBC") == 0) || (strcmp(coind->symbol2, "QBC") == 0) ||
-		(strcmp(coind->symbol, "LCN") == 0)
+		(strcmp(coind->symbol, "LCN") == 0) || (strcmp(coind->rpcencoding, "AUX") == 0)
 		)
 		json = rpc_call(&coind->rpc, "submitauxblock", params, coind);
 	else

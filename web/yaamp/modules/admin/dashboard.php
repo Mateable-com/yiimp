@@ -8,26 +8,37 @@ JavascriptFile("/extensions/jqplot/plugins/jqplot.highlighter.js");
 JavascriptFile("/yaamp/ui/js/jquery.metadata.js");
 JavascriptFile("/yaamp/ui/js/jquery.tablesorter.widgets.js");
 
-echo getAdminSideBarLinks();
+?>
 
-//<a href='/site/eval'>Eval</a>&nbsp;
-?>&nbsp;-&nbsp;
-<a href='/admin/memcached'>Memcache</a>&nbsp;
-<a href='/admin/connections'>Connections</a>&nbsp;
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 bg-dark text-white">
+                <div class="card-body py-3 d-flex flex-wrap align-items-center">
+                    <h4 class="mb-0 me-auto"><i class="fa fa-tachometer-alt me-2 text-primary"></i>Admin Dashboard</h4>
+                    <div class="btn-group shadow-sm">
+                        <a href='/admin/coincreate' class="btn btn-sm btn-success"><i class="fa fa-plus-circle me-1"></i>Create Coin</a>
+                        <a href='/admin/updateprice' class="btn btn-sm btn-info text-white"><i class="fa fa-sync-alt me-1"></i>Update Prices</a>
+                        <a href='/admin/memcached' class="btn btn-sm btn-secondary"><i class="fa fa-memory me-1"></i>Memcache</a>
+                        <a href='/admin/connections' class="btn btn-sm btn-secondary"><i class="fa fa-network-wired me-1"></i>Connections</a>
+                        <?php if (YAAMP_RENTAL) : ?>
+                        <a href='/renting/admin' class="btn btn-sm btn-warning"><i class="fa fa-server me-1"></i>Rental</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<?php if (YAAMP_RENTAL) : ?>
-<a href='/renting/admin'>Rental</a>&nbsp;
-<?php endif; ?>
-
-<div id='main_results'></div>
-
-<br><a href='/admin/coincreate'><img width=16 src=''><b>CREATE COIN</b></a>
-<br><a href='/admin/updateprice'><img width=16 src=''><b>UPDATE PRICE</b></a>
-
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
+    <div id='main_results'>
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading dashboard...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading live pool statistics...</p>
+        </div>
+    </div>
+</div>
 
 <script type="text/javascript">
 
@@ -46,7 +57,6 @@ function main_ready(data)
 
 	main_refresh_assets();
 	main_refresh_negative();
-//	main_refresh_profit();
 }
 
 function main_error()
@@ -59,7 +69,7 @@ function main_refresh()
 	var url = "/admin/common_results";
 
 	clearTimeout(main_timeout);
-	$.get(url, '', main_ready).error(main_error);
+	$.get(url, '', main_ready).fail(main_error);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -77,25 +87,23 @@ function main_refresh_assets()
 
 function graph_init_assets(data)
 {
-	$('#graph_results_assets').empty();
+	var el = $('#graph_results_assets');
+    if (!el.length) return;
+    el.empty();
 
 	var t = $.parseJSON(data);
 	var plot1 = $.jqplot('graph_results_assets', t,
 	{
-	//	title: '<b></b>',
 		stackSeries: true,
-
 		seriesDefaults:
 		{
 			renderer:$.jqplot.BarRenderer,
 			rendererOptions: {barWidth: 3}
 		},
-
 		axes: {
 			xaxis: {
 				tickInterval: 7200,
 				renderer: $.jqplot.DateAxisRenderer,
-			//	tickOptions: {showLabel: false}
 				tickOptions: {formatString: '<font size=1>%#Hh</font>'}
 			},
 			yaxis: {
@@ -103,7 +111,6 @@ function graph_init_assets(data)
 				tickOptions: {formatString: '<font size=1>%#.3f &nbsp;</font>'}
 			}
 		},
-
 		grid:
 		{
 			borderWidth: 1,
@@ -111,7 +118,6 @@ function graph_init_assets(data)
 			shadowDepth: 0,
 			background: '#ffffff'
 		},
-
 	});
 }
 
@@ -130,20 +136,19 @@ function main_refresh_negative()
 
 function graph_init_negative(data)
 {
-	$('#graph_results_negative').empty();
+	var el = $('#graph_results_negative');
+    if (!el.length) return;
+    el.empty();
 
 	var t = $.parseJSON(data);
 	var plot1 = $.jqplot('graph_results_negative', t,
 	{
-	//	title: '<b></b>',
 		stackSeries: true,
-
 		seriesDefaults:
 		{
 			renderer:$.jqplot.BarRenderer,
 			rendererOptions: {barWidth: 3}
 		},
-
 		axes: {
 			xaxis: {
 				tickInterval: 7200,
@@ -155,7 +160,6 @@ function graph_init_negative(data)
 				tickOptions: {formatString: '<font size=1>%#.3f &nbsp;</font>'}
 			}
 		},
-
 		grid:
 		{
 			borderWidth: 1,
@@ -163,64 +167,6 @@ function graph_init_negative(data)
 			shadowDepth: 0,
 			background: '#ffffff'
 		},
-
 	});
 }
-
-///////////////////////////////////////////////////////////////////////
-
-// function main_ready_profit(data)
-// {
-// 	graph_init_profit(data);
-// }
-
-// function main_refresh_profit()
-// {
-// 	var url = "/admin/graph_profit_results";
-// 	$.get(url, '', main_ready_profit);
-// }
-
-// function graph_init_profit(data)
-// {
-// 	$('#graph_results_profit').empty();
-
-// 	var t = $.parseJSON(data);
-// 	var plot1 = $.jqplot('graph_results_profit', t,
-// 	{
-// 	//	title: '<b></b>',
-// 		stackSeries: true,
-
-// 		seriesDefaults:
-// 		{
-// 			renderer:$.jqplot.BarRenderer,
-// 			rendererOptions: {barWidth: 3}
-// 		},
-
-// 		axes: {
-// 			xaxis: {
-// 				tickInterval: 7200,
-// 				renderer: $.jqplot.DateAxisRenderer,
-// 				tickOptions: {formatString: '<font size=1>%#Hh</font>'}
-// 			},
-// 			yaxis: {
-// 				min: 0,
-// 				tickOptions: {formatString: '<font size=1>%#.3f &nbsp;</font>'}
-// 			}
-// 		},
-
-// 		grid:
-// 		{
-// 			borderWidth: 1,
-// 			shadowWidth: 0,
-// 			shadowDepth: 0,
-// 			background: '#ffffff'
-// 		},
-
-// 	});
-// }
-
-
 </script>
-
-
-
