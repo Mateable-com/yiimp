@@ -1,621 +1,207 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-// Register Bootstrap 5 and other required assets
-Yii::app()->clientScript->registerCssFile('https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css');
-Yii::app()->clientScript->registerScriptFile('https://code.jquery.com/jquery-3.6.0.min.js', CClientScript::POS_HEAD);
-Yii::app()->clientScript->registerScriptFile('https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js', CClientScript::POS_END);
+$this->pageTitle = ($coin->id ? 'Edit ' . $coin->name : 'Create New Coin') . ' - Admin';
 
-// Add custom styles
+echo '<div class="container-fluid py-4">';
+
+// --- Breadcrumbs ---
+echo '<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb bg-light p-3 rounded-3 shadow-sm border-0 small fw-bold">
+    <li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-muted">Admin</a></li>
+    <li class="breadcrumb-item"><a href="/admin/coinwallets" class="text-decoration-none text-muted">Wallets</a></li>
+    <li class="breadcrumb-item active text-primary" aria-current="page">'.($coin->id ? 'Edit '.$coin->symbol : 'Create New Coin').'</li>
+  </ol>
+</nav>';
+
+echo '<div class="card shadow-lg border-0 rounded-3 overflow-hidden mb-5">
+        <div class="card-header bg-dark text-white p-4 d-flex align-items-center border-0">
+            <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-4">
+                <i class="fa fa-coins fa-2x text-primary"></i>
+            </div>
+            <div>
+                <h3 class="mb-0 fw-bold">'.($coin->id ? 'Edit Coin: '.$coin->name : 'Register New Coin').'</h3>
+                <p class="text-muted small mb-0 mt-1">Full configuration for wallet, network rules, and exchange integration.</p>
+            </div>
+            <div class="ms-auto">
+                <a href="/admin/coinwallets" class="btn btn-outline-light btn-sm rounded-pill px-3"><i class="fa fa-arrow-left me-1"></i> Cancel</a>
+            </div>
+        </div>
+        <div class="card-body p-0">';
+
+echo CHtml::beginForm('', 'post', array('id'=>'coin-form'));
+if($coin->hasErrors()) {
+    echo '<div class="alert alert-danger border-0 shadow-sm mx-4 mt-4 mb-0"><i class="fa fa-exclamation-circle me-2"></i><b>Validation Errors:</b><br/>'.CHtml::errorSummary($coin).'</div>';
+}
+
 echo <<<EOT
-<style type="text/css">
-.container { max-width: 1200px; margin: 20px auto; }
-.form-group { margin-bottom: 1rem; }
-.form-hint { color: #666; font-size: 0.875rem; margin-top: 0.25rem; }
-[readonly] { background-color: #e9ecef; }
-.nav-tabs { margin-bottom: 20px; border-bottom: 1px solid #dee2e6; }
-.nav-tabs .nav-link { color: #495057; }
-.nav-tabs .nav-link.active { color: #007bff; border-color: #dee2e6 #dee2e6 #fff; }
-.tab-content { padding: 20px 0; }
-.btn-primary { margin-top: 20px; }
-.form-control { max-width: 100%; }
-.form-check-input { margin-top: 0.3rem; }
-</style>
-EOT;
-
-echo '<div class="container">';
-echo getAdminSideBarLinks();
-
-if (!isset($coin)) {
-    echo '<div class="alert alert-danger">Error: Coin object not initialized</div>';
-    return;
-}
-
-if (!is_null($coin->id)) {
-    echo '<h2>Edit Coin: ' . CHtml::link($coin->name, '/admin/coin?id='.$coin->id) . '</h2>';
-} else {
-    echo '<h2>Create New Coin</h2>';
-}
-
-$this->widget('UniForm');
-
-echo CUFHtml::beginForm('', 'post', array('class'=>'form'));
-echo CUFHtml::errorSummary($coin, '', '', array('class'=>'alert alert-danger'));
-
-// Replace the existing tabs HTML with Bootstrap tabs
-echo <<<EOT
-<ul class="nav nav-tabs" id="coinTabs" role="tablist">
-    <li class="nav-item">
-        <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#tabs-1" role="tab">General</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="settings-tab" data-bs-toggle="tab" href="#tabs-2" role="tab">Settings</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="exchange-tab" data-bs-toggle="tab" href="#tabs-3" role="tab">Exchange</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="daemon-tab" data-bs-toggle="tab" href="#tabs-4" role="tab">Daemon</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="links-tab" data-bs-toggle="tab" href="#tabs-5" role="tab">Links</a>
-    </li>
-</ul>
-<div class="tab-content" id="coinTabsContent">
-EOT;
-
-echo '<div class="tab-pane fade show active" id="tabs-1" role="tabpanel">';
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'name');
-echo CUFHtml::activeLabelEx($coin, 'name');
-echo CUFHtml::activeTextField($coin, 'name', array('maxlength'=>200));
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'symbol');
-echo CUFHtml::activeLabelEx($coin, 'symbol');
-echo CUFHtml::activeTextField($coin, 'symbol', array('maxlength'=>200,'style'=>'width: 120px;'));
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'symbol2');
-echo CUFHtml::activeLabelEx($coin, 'symbol2');
-echo CUFHtml::activeTextField($coin, 'symbol2', array('maxlength'=>200,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Set it if symbol is different</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'algo');
-echo CUFHtml::activeLabelEx($coin, 'algo');
-$ListAlgos = array();
-$db_algos = getdbolist('db_algos');
-foreach ($db_algos as $algo) {
-	$NameAlgo = $algo->name;
-	$ListAlgos[$NameAlgo] = $NameAlgo;
-	
-}
-echo CUFHtml::dropDownList('db_coins[algo]', $coin->algo, $ListAlgos, array(
-	'style' => 'border: 1px solid #dfdfdf; height: 26px; width:135px',
-	'class' => 'textInput tweetnews-input'
-));
-$coin_algo = ($coin->algo)? '<span style="color: green;">'.$coin->algo.'</span>' : '<span style="color: red;">None</span>';
-echo '<label style="padding-left: 20px;" for="algo">Algo Selected: '.$coin_algo.'</label>';
-echo '<p class="formHint2">Required all lower case</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'auto_exchange');
-echo CUFHtml::activeLabelEx($coin, 'auto_exchange');
-echo CUFHtml::activeCheckBox($coin, 'auto_exchange');
-echo '<p class="formHint2">include in automatic miningselection</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'image');
-echo CUFHtml::activeLabelEx($coin, 'image');
-echo CUFHtml::activeTextField($coin, 'image', array('maxlength'=>200));
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'version_installed');
-echo CUFHtml::activeLabelEx($coin, 'version_installed');
-echo CUFHtml::activeTextField($coin, 'version_installed', array('maxlength'=>64,'style'=>'width: 120px;'));
-echo '<p class="formHint2">walletversion installed</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'version_github');
-echo CUFHtml::activeLabelEx($coin, 'version_github');
-echo CUFHtml::activeTextField($coin, 'version_github', array('maxlength'=>200,'style'=>'width: 100px;','readonly'=>'readonly'));
-echo '<p class="formHint2">walletversion on GitHub</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'payout_min');
-echo CUFHtml::activeLabelEx($coin, 'payout_min');
-echo CUFHtml::activeTextField($coin, 'payout_min', array('maxlength'=>200,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Pay users when they reach this amount</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'payout_max');
-echo CUFHtml::activeLabelEx($coin, 'payout_max');
-echo CUFHtml::activeTextField($coin, 'payout_max', array('maxlength'=>200,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Maximum transaction amount</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'txfee');
-echo CUFHtml::activeLabelEx($coin, 'txfee');
-echo CUFHtml::activeTextField($coin, 'txfee', array('maxlength'=>200,'style'=>'width: 100px;','readonly'=>'readonly'));
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'block_height');
-echo CUFHtml::activeLabelEx($coin, 'block_height');
-echo CUFHtml::activeTextField($coin, 'block_height', array('readonly'=>'readonly','style'=>'width: 120px;'));
-echo '<p class="formHint2">Current height</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'target_height');
-echo CUFHtml::activeLabelEx($coin, 'target_height');
-echo CUFHtml::activeTextField($coin, 'target_height', array('maxlength'=>32,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Known height of the network</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'powend_height');
-echo CUFHtml::activeLabelEx($coin, 'powend_height');
-echo CUFHtml::activeTextField($coin, 'powend_height', array('maxlength'=>32,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Height of the end of PoW mining</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'mature_blocks');
-echo CUFHtml::activeLabelEx($coin, 'mature_blocks');
-echo CUFHtml::activeTextField($coin, 'mature_blocks', array('maxlength'=>32,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Required block count to mature</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'powlimit_bits');
-echo CUFHtml::activeLabelEx($coin, 'powlimit_bits');
-echo CUFHtml::activeTextField($coin, 'powlimit_bits', array('maxlength'=>32,'style'=>'width: 120px;'));
-echo '<p class="formHint2">number of leading \'0\' bits on powlimit (basehash for diff 1)</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'block_time');
-echo CUFHtml::activeLabelEx($coin, 'block_time');
-echo CUFHtml::activeTextField($coin, 'block_time', array('maxlength'=>32,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Average block time (sec)</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'errors');
-echo CUFHtml::activeLabelEx($coin, 'errors');
-echo CUFHtml::activeTextField($coin, 'errors', array('maxlength'=>200,'readonly'=>'readonly','style'=>'width: 600px;'));
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'specifications');
-echo CUFHtml::activeLabelEx($coin, 'specifications');
-echo CUFHtml::activeTextArea($coin, 'specifications', array('maxlength'=>2048,'lines'=>5,'class'=>'tweetnews-input','style'=>'width: 600px;'));
-echo CUFHtml::closeCtrlHolder();
-
-echo '</div>';
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-echo '<div class="tab-pane fade" id="tabs-2" role="tabpanel">';
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'enable');
-echo CUFHtml::activeLabelEx($coin, 'enable');
-echo CUFHtml::activeCheckBox($coin, 'enable');
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'auto_ready');
-echo CUFHtml::activeLabelEx($coin, 'auto_ready');
-echo CUFHtml::activeCheckBox($coin, 'auto_ready');
-echo '<p class="formHint2">Allowed to mine</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'visible');
-echo CUFHtml::activeLabelEx($coin, 'visible');
-echo CUFHtml::activeCheckBox($coin, 'visible');
-echo '<p class="formHint2">Visibility for the public</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'installed');
-echo CUFHtml::activeLabelEx($coin, 'installed');
-echo CUFHtml::activeCheckBox($coin, 'installed');
-echo '<p class="formHint2">Required to be visible in the Wallets board</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'no_explorer');
-echo CUFHtml::activeLabelEx($coin, 'no_explorer');
-echo CUFHtml::activeCheckBox($coin, 'no_explorer');
-echo '<p class="formHint2">Disable block explorer for the public</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'watch');
-echo CUFHtml::activeLabelEx($coin, 'watch');
-echo CUFHtml::activeCheckBox($coin, 'watch');
-echo '<p class="formHint2">Track balance and markets history</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'auxpow');
-echo CUFHtml::activeLabelEx($coin, 'auxpow');
-echo CUFHtml::activeCheckBox($coin, 'auxpow');
-echo '<p class="formHint2">Merged mining</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'enable_rpcdebug');
-echo CUFHtml::activeLabelEx($coin, 'enable_rpcdebug');
-echo CUFHtml::activeCheckBox($coin, 'enable_rpcdebug');
-echo '<p class="formHint2">enable debug of rpc-communication from stratum to wallet</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'personalization');
-echo CUFHtml::activeLabelEx($coin, 'personalization');
-echo CUFHtml::activeTextField($coin, 'personalization', array('maxlength'=>100));
-echo '<p class="formHint2">personalization-string for equihash-coins<br>default "ZcashPoW" (see src/crypto/equihash.cpp for value)</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'max_miners');
-echo CUFHtml::activeLabelEx($coin, 'max_miners');
-echo CUFHtml::activeTextField($coin, 'max_miners', array('maxlength'=>32,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Miners allowed by the stratum</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'max_shares');
-echo CUFHtml::activeLabelEx($coin, 'max_shares');
-echo CUFHtml::activeTextField($coin, 'max_shares', array('maxlength'=>32,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Auto restart stratum after this amount of shares</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'master_wallet');
-echo CUFHtml::activeLabelEx($coin, 'master_wallet');
-echo CUFHtml::activeTextField($coin, 'master_wallet', array('maxlength'=>200));
-echo '<p class="formHint2">The pool wallet address</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'wallet_zaddress');
-echo CUFHtml::activeLabelEx($coin, 'wallet_zaddress');
-echo CUFHtml::activeTextField($coin, 'wallet_zaddress', array('maxlength'=>200));
-echo '<p class="formHint2">zaddress for privacy-coins (zcash)</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'reward');
-echo CUFHtml::activeLabelEx($coin, 'reward');
-echo CUFHtml::activeTextField($coin, 'reward', array('maxlength'=>200,'readonly'=>'readonly','style'=>'width: 120px;'));
-echo '<p class="formHint2">PoW block value</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'reward_mul');
-echo CUFHtml::activeLabelEx($coin, 'reward_mul');
-echo CUFHtml::activeTextField($coin, 'reward_mul', array('maxlength'=>200,'style'=>'width: 120px;'));
-echo '<p class="formHint2">Adjust the block reward if incorrect</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'charity_percent');
-echo CUFHtml::activeLabelEx($coin, 'charity_percent');
-echo CUFHtml::activeTextField($coin, 'charity_percent', array('maxlength'=>10,'style'=>'width: 30px;'));
-echo '<p class="formHint2">Reward for foundation or dev fees, generally between 1 and 10 %</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'charity_address');
-echo CUFHtml::activeLabelEx($coin, 'charity_address');
-echo CUFHtml::activeTextField($coin, 'charity_address', array('maxlength'=>200));
-echo '<p class="formHint2">Foundation address if "dev fees" are required</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'hasgetinfo');
-echo CUFHtml::activeLabelEx($coin, 'hasgetinfo');
-echo CUFHtml::activeCheckBox($coin, 'hasgetinfo');
-echo '<p class="formHint2">Enable if getinfo rpc method is present</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'hassubmitblock');
-echo CUFHtml::activeLabelEx($coin, 'hassubmitblock');
-echo CUFHtml::activeCheckBox($coin, 'hassubmitblock');
-echo '<p class="formHint2">Enable if submitblock method is present</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'txmessage');
-echo CUFHtml::activeLabelEx($coin, 'txmessage');
-echo CUFHtml::activeCheckBox($coin, 'txmessage');
-echo '<p class="formHint2">Block template with a tx message</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'hasmasternodes');
-echo CUFHtml::activeLabelEx($coin, 'hasmasternodes');
-echo CUFHtml::activeCheckBox($coin, 'hasmasternodes');
-echo '<p class="formHint2">Require "payee" and "payee_amount", or masternode object in getblocktemplate</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'usesegwit');
-echo CUFHtml::activeLabelEx($coin, 'usesegwit');
-echo CUFHtml::activeCheckBox($coin, 'usesegwit');
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'usemweb');
-echo CUFHtml::activeLabelEx($coin, 'usemweb');
-echo CUFHtml::activeCheckBox($coin, 'usemweb');
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo '</div>';
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-echo '<div class="tab-pane fade" id="tabs-3" role="tabpanel">';
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'dontsell');
-echo CUFHtml::activeLabelEx($coin, 'dontsell');
-echo CUFHtml::activeCheckBox($coin, 'dontsell');
-echo '<p class="formHint2">Disable auto send to exchange</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'sellonbid');
-echo CUFHtml::activeLabelEx($coin, 'sellonbid');
-echo CUFHtml::activeCheckBox($coin, 'sellonbid');
-echo '<p class="formHint2">Reduce the sell price on exchanges</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'sellthreshold');
-echo CUFHtml::activeLabelEx($coin, 'sellthreshold');
-echo CUFHtml::activeTextField($coin, 'sellthreshold', array('maxlength'=>16,'style'=>'width: 120px;'));
-echo '<p class="formHint2">min amount to sell</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'market');
-echo CUFHtml::activeLabelEx($coin, 'market');
-echo CUFHtml::activeTextField($coin, 'market', array('maxlength'=>128,'style'=>'width: 180px;'));
-echo '<p class="formHint2">Selected exchange</p>';
-echo CUFHtml::closeCtrlHolder();
-
-if (empty($coin->price) || empty($coin->market) || $coin->market == 'unknown') {
-
-	echo CUFHtml::openActiveCtrlHolder($coin, 'price');
-	echo CUFHtml::activeLabelEx($coin, 'price');
-	echo CUFHtml::activeTextField($coin, 'price', array('maxlength'=>16,'style'=>'width: 180px;'));
-	echo '<p class="formHint2">Manually set the BTC price if missing</p>';
-	echo CUFHtml::closeCtrlHolder();
-
-}
-
-//echo CUFHtml::openActiveCtrlHolder($coin, 'marketid');
-//echo CUFHtml::activeLabelEx($coin, 'marketid');
-//echo CUFHtml::activeTextField($coin, 'marketid', array('maxlength'=>20,'style'=>'width: 120px;'));
-//echo "<p class='formHint2'>Required on cryptsy ?</p>";
-//echo CUFHtml::closeCtrlHolder();
-
-//echo CUFHtml::openActiveCtrlHolder($coin, 'deposit_address');
-//echo CUFHtml::activeLabelEx($coin, 'deposit_address');
-//echo CUFHtml::activeTextField($coin, 'deposit_address', array('maxlength'=>20));
-//echo "<p class='formHint2'>For donations or exchange withdraws ?</p>";
-//echo CUFHtml::closeCtrlHolder();
-
-//echo CUFHtml::openActiveCtrlHolder($coin, 'deposit_minimum');
-//echo CUFHtml::activeLabelEx($coin, 'deposit_minimum');
-//echo CUFHtml::activeTextField($coin, 'deposit_minimum', array('maxlength'=>20,'style'=>'width: 120px;'));
-//echo "<p class='formHint2'>Unused</p>";
-//echo CUFHtml::closeCtrlHolder();
-
-echo '</div>';
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-echo '<div class="tab-pane fade" id="tabs-4" role="tabpanel">';
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'program');
-echo CUFHtml::activeLabelEx($coin, 'program');
-echo CUFHtml::activeTextField($coin, 'program', array('maxlength'=>128,'style'=>'width: 180px;'));
-echo '<p class="formHint2">Daemon process name</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'conf_folder');
-echo CUFHtml::activeLabelEx($coin, 'conf_folder');
-echo CUFHtml::activeTextField($coin, 'conf_folder', array('maxlength'=>128,'style'=>'width: 180px;'));
-echo '<p class="formHint2">Generally close to the process name (.bitcoin)</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpchost');
-echo CUFHtml::activeLabelEx($coin, 'rpchost');
-echo CUFHtml::activeTextField($coin, 'rpchost', array('maxlength'=>128,'style'=>'width: 180px;'));
-echo '<p class="formHint2">Daemon (Wallet) IP</p>';
-echo CUFHtml::closeCtrlHolder();
-
-if(empty($coin->rpcport))
-	$coin->rpcport = $coin->id*10;
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpcport');
-echo CUFHtml::activeLabelEx($coin, 'rpcport');
-echo CUFHtml::activeTextField($coin, 'rpcport', array('maxlength'=>5,'style'=>'width: 60px;'));
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-if(empty($coin->rpcuser))
-	$coin->rpcuser = 'yiimprpc';
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpcuser');
-echo CUFHtml::activeLabelEx($coin, 'rpcuser');
-echo CUFHtml::activeTextField($coin, 'rpcuser', array('maxlength'=>128,'style'=>'width: 180px;'));
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-// generate a random password
-if(empty($coin->rpcpasswd))
-	$coin->rpcpasswd = preg_replace("|[^\w]|m",'',base64_encode(pack("H*",md5("".time().YAAMP_SITE_URL))));
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpcpasswd');
-echo CUFHtml::activeLabelEx($coin, 'rpcpasswd');
-echo CUFHtml::activeTextField($coin, 'rpcpasswd', array('maxlength'=>128));
-echo '<p class="formHint2"></p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'serveruser');
-echo CUFHtml::activeLabelEx($coin, 'serveruser');
-echo CUFHtml::activeTextField($coin, 'serveruser', array('maxlength'=>35,'style'=>'width: 180px;'));
-echo '<p class="formHint2">Daemon process username</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpcencoding');
-echo CUFHtml::activeLabelEx($coin, 'rpcencoding');
-echo CUFHtml::activeDropDownList($coin, 'rpcencoding', array('POW'=>'POW', 'POS'=>'POS', 'ZEC'=>'ZEC', 'DCR'=>'DCR', 'AUX'=>'AUX'), array('style'=>'width: 70px;'));
-echo '<p class="formHint2">POW/POS/ZEC/DCR/AUX (AUX for createauxblock/submitauxblock)</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'dedicatedport');
-echo CUFHtml::activeLabelEx($coin, 'dedicatedport');
-echo CUFHtml::activeTextField($coin, 'dedicatedport', array(
-    'maxlength' => 5,
-    'style' => 'width: 60px;'
-));
-echo '<p class="formHint2">Run addport to get Port Number</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpccurl');
-echo CUFHtml::activeLabelEx($coin, 'rpccurl');
-echo CUFHtml::activeCheckBox($coin, 'rpccurl');
-echo '<p class="formHint2">Force the stratum to use curl for RPC</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpcssl');
-echo CUFHtml::activeLabelEx($coin, 'rpcssl');
-echo CUFHtml::activeCheckBox($coin, 'rpcssl');
-echo '<p class="formHint2">Wallet RPC secured via SSL</p>';
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'rpccert');
-echo CUFHtml::activeLabelEx($coin, 'rpccert');
-echo CUFHtml::activeTextField($coin, 'rpccert');
-echo "<p class='formHint2'>Certificat file for RPC via SSL</p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'account');
-echo CUFHtml::activeLabelEx($coin, 'account');
-echo CUFHtml::activeTextField($coin, 'account', array('maxlength'=>128,'style'=>'width: 180px;'));
-echo '<p class="formHint2">Wallet account to use</p>';
-echo CUFHtml::closeCtrlHolder();
-
-if ($coin->id) {
-	echo CHtml::tag("hr");
-	echo "<b>Sample config</b>:";
-	echo CHtml::opentag("pre");
-	$port = getAlgoPort($coin->algo);
-	$dedport = $coin->dedicatedport;
-	echo "rpcuser={$coin->rpcuser}\n";
-	echo "rpcpassword={$coin->rpcpasswd}\n";
-	echo "rpcport={$coin->rpcport}\n";
-	echo "rpcthreads=8\n";
-	echo "rpcallowip=127.0.0.1\n";
-	echo "# onlynet=ipv4\n";
-	echo "maxconnections=12\n";
-	echo "daemon=1\n";
-	echo "gen=0\n";
-	echo "\n";
-	echo "alertnotify=echo %s | mail -s \"{$coin->name} alert!\" ".YAAMP_ADMIN_EMAIL."\n";
-	if (empty($coin->dedicatedport))
-        {
-            echo "blocknotify=/var/stratum/blocknotify ".YAAMP_STRATUM_URL.":$port {$coin->id} %s\n";
+<div class="p-4">
+    <ul class="nav nav-pills mb-4 bg-light p-2 rounded-pill shadow-sm" id="coinTabs" role="tablist" style="width: fit-content;">
+        <li class="nav-item"><button class="nav-link active rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#t-gen" type="button">1. General</button></li>
+        <li class="nav-item mx-1"><button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#t-net" type="button">2. Network</button></li>
+        <li class="nav-item mx-1"><button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#t-rpc" type="button">3. RPC/Daemon</button></li>
+        <li class="nav-item mx-1"><button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#t-exch" type="button">4. Exchange</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill fw-bold px-3" data-bs-toggle="pill" data-bs-target="#t-links" type="button">5. Social Links</button></li>
+    </ul>
+
+    <div class="tab-content" id="coinTabsContent">
+
+<script>
+const algoPorts = {
+    'sha256': { rpc: 8332, strat: 3333 },
+    'scrypt': { rpc: 9332, strat: 3433 },
+    'x11': { rpc: 9998, strat: 3533 },
+    'neoscrypt': { rpc: 4733, strat: 4233 },
+    'lyra2v2': { rpc: 14233, strat: 4533 },
+    'yescrypt': { rpc: 11333, strat: 6233 },
+    'equihash': { rpc: 8232, strat: 2142 }
+};
+
+$(function() {
+    $('#db_coins_algo').change(function() {
+        const algo = $(this).val();
+        if (algoPorts[algo]) {
+            if ($('#db_coins_rpcport').val() == '') $('#db_coins_rpcport').val(algoPorts[algo].rpc);
+            if ($('#db_coins_dedicatedport').val() == '') $('#db_coins_dedicatedport').val(algoPorts[algo].strat);
         }
-        else
-        {
-            echo "blocknotify=/var/stratum/blocknotify ".YAAMP_STRATUM_URL.":$dedport {$coin->id} %s\n";
-        }
-    echo " \n";
-    echo CHtml::closetag("pre");
-
-	echo CHtml::tag("hr");
-	echo "<b>Miner command line</b>:";
-	echo CHtml::opentag("pre");
-	echo "-a {$coin->algo} ";
-	if (empty($coin->dedicatedport))
-        {
-            echo "-o stratum+tcp://" . YAAMP_STRATUM_URL . ':' . $port . ' ';
-        }
-        else
-        {
-            echo "-o stratum+tcp://" . YAAMP_STRATUM_URL . ':' . $dedport . ' ';
-        }echo "-u {$coin->master_wallet} ";
-	echo "-p c={$coin->symbol} ";
-	echo "\n";
-	echo CHtml::closetag("pre");
-}
-
-echo '</div>';
-
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-echo '<div class="tab-pane fade" id="tabs-5" role="tabpanel">';
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_bitcointalk');
-echo CUFHtml::activeLabelEx($coin, 'link_bitcointalk');
-echo CUFHtml::activeTextField($coin, 'link_bitcointalk');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_github');
-echo CUFHtml::activeLabelEx($coin, 'link_github');
-echo CUFHtml::activeTextField($coin, 'link_github');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_site');
-echo CUFHtml::activeLabelEx($coin, 'link_site');
-echo CUFHtml::activeTextField($coin, 'link_site');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_exchange');
-echo CUFHtml::activeLabelEx($coin, 'link_exchange');
-echo CUFHtml::activeTextField($coin, 'link_exchange');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_explorer');
-echo CUFHtml::activeLabelEx($coin, 'link_explorer');
-echo CUFHtml::activeTextField($coin, 'link_explorer');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_twitter');
-echo CUFHtml::activeLabelEx($coin, 'link_twitter');
-echo CUFHtml::activeTextField($coin, 'link_twitter');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_discord');
-echo CUFHtml::activeLabelEx($coin, 'link_discord');
-echo CUFHtml::activeTextField($coin, 'link_discord');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo CUFHtml::openActiveCtrlHolder($coin, 'link_facebook');
-echo CUFHtml::activeLabelEx($coin, 'link_facebook');
-echo CUFHtml::activeTextField($coin, 'link_facebook');
-echo "<p class='formHint2'></p>";
-echo CUFHtml::closeCtrlHolder();
-
-echo '</div>';
-
-
-echo '</div>';
-
-echo CUFHtml::closeTag('fieldset');
-showSubmitButton($update? 'Save': 'Create');
-echo CUFHtml::endForm();
-
-Yii::app()->clientScript->registerScript('init-tabs', "
-jQuery(document).ready(function($) {
-    // Get active tab from URL hash or default to first tab
-    let hash = window.location.hash;
-    if (hash) {
-        $('#coinTabs a[href=\"'+hash+'\"]').tab('show');
-    }
-
-    // Update URL hash when tab changes
-    $('#coinTabs a').on('click', function (e) {
-        e.preventDefault();
-        $(this).tab('show');
-        window.location.hash = $(this).attr('href');
     });
 });
-", CClientScript::POS_END);
+</script>
+EOT;
+
+// --- TAB 1: GENERAL ---
+echo '<div class="tab-pane fade show active" id="t-gen" role="tabpanel"><div class="row g-4">';
+echo '  <div class="col-md-6">';
+echo '    <div class="mb-3"><label class="form-label fw-bold small text-uppercase">Full Name</label>'.CHtml::activeTextField($coin, 'name', array('class'=>'form-control border-2')).'<div class="form-text small">Display name of the coin.</div></div>';
+echo '    <div class="row"><div class="col-6"><label class="form-label fw-bold small text-uppercase">Symbol</label>'.CHtml::activeTextField($coin, 'symbol', array('class'=>'form-control border-2')).'</div>';
+echo '    <div class="col-6"><label class="form-label fw-bold small text-uppercase">Symbol Alias</label>'.CHtml::activeTextField($coin, 'symbol2', array('class'=>'form-control border-2')).'<div class="form-text small">Internal alias if different.</div></div></div>';
+echo '    <div class="mt-3"><label class="form-label fw-bold small text-uppercase">Algorithm</label>';
+$ListAlgos = []; $db_algos = getdbolist('db_algos'); foreach ($db_algos as $a) $ListAlgos[$a->name] = $a->name;
+echo CHtml::activeDropDownList($coin, 'algo', $ListAlgos, array('class'=>'form-select border-2')).'<div class="form-text small">Must be lower-case.</div></div>';
+echo '  </div>';
+echo '  <div class="col-md-6">';
+echo '    <div class="mb-3"><label class="form-label fw-bold small text-uppercase">Coin Icon URL</label>'.CHtml::activeTextField($coin, 'image', array('class'=>'form-control border-2', 'placeholder'=>'/images/btc.png')).'</div>';
+echo '    <div class="row"><div class="col-6"><label class="form-label fw-bold small text-uppercase">Payout Min</label>'.CHtml::activeTextField($coin, 'payout_min', array('class'=>'form-control border-2')).'</div>';
+echo '    <div class="col-6"><label class="form-label fw-bold small text-uppercase">Payout Max</label>'.CHtml::activeTextField($coin, 'payout_max', array('class'=>'form-control border-2')).'</div></div>';
+echo '    <div class="mt-3"><label class="form-label fw-bold small text-uppercase">Maturity Blocks</label>'.CHtml::activeTextField($coin, 'mature_blocks', array('class'=>'form-control border-2')).'<div class="form-text small">Required confirmations for rewards.</div></div>';
+echo '  </div></div></div>';
+
+// --- TAB 2: NETWORK ---
+echo '<div class="tab-pane fade" id="t-net" role="tabpanel"><div class="row g-4">';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">Current Block Height</label>'.CHtml::activeTextField($coin, 'block_height', array('class'=>'form-control border-2 bg-light', 'readonly'=>'readonly')).'</div>';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">Target Height (Sync)</label>'.CHtml::activeTextField($coin, 'target_height', array('class'=>'form-control border-2')).'<div class="form-text small">Known network height.</div></div>';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">PoW End Height</label>'.CHtml::activeTextField($coin, 'powend_height', array('class'=>'form-control border-2')).'<div class="form-text small">Height when PoW mining stops.</div></div>';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">Avg Block Time (sec)</label>'.CHtml::activeTextField($coin, 'block_time', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">PoW Limit Bits</label>'.CHtml::activeTextField($coin, 'powlimit_bits', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">Max Miners</label>'.CHtml::activeTextField($coin, 'max_miners', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-12 d-flex align-items-center gap-4 bg-light p-3 rounded-3">';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Mining Enabled</label>'.CHtml::activeCheckBox($coin, 'enable', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Visible to Public</label>'.CHtml::activeCheckBox($coin, 'visible', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold text-purple">AuxPoW Support</label>'.CHtml::activeCheckBox($coin, 'auxpow', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Disable Explorer</label>'.CHtml::activeCheckBox($coin, 'no_explorer', array('class'=>'form-check-input')).'</div>';
+echo '  </div>';
+echo '  <div class="col-12"><label class="form-label fw-bold small text-uppercase">Specifications / Technical Notes</label>'.CHtml::activeTextArea($coin, 'specifications', array('class'=>'form-control border-2', 'rows'=>3)).'</div>';
+echo '</div></div>';
+
+// --- TAB 3: RPC / DAEMON ---
+echo '<div class="tab-pane fade" id="t-rpc" role="tabpanel"><div class="row g-4">';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">RPC Host (IP)</label>'.CHtml::activeTextField($coin, 'rpchost', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-2"><label class="form-label fw-bold small text-uppercase">RPC Port</label>'.CHtml::activeTextField($coin, 'rpcport', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-3"><label class="form-label fw-bold small text-uppercase">RPC User</label>'.CHtml::activeTextField($coin, 'rpcuser', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-3"><label class="form-label fw-bold small text-uppercase">RPC Password</label>'.CHtml::activeTextField($coin, 'rpcpasswd', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-4"><label class="form-label fw-bold small text-uppercase">RPC Encoding</label>'.CHtml::activeDropDownList($coin, 'rpcencoding', array('POW'=>'POW','POS'=>'POS','AUX'=>'AUX','DCR'=>'DCR','ZEC'=>'ZEC','GETH'=>'GETH'), array('class'=>'form-select border-2')).'</div>';
+echo '  <div class="col-md-2"><label class="form-label fw-bold small text-uppercase">Dedicated Port</label>'.CHtml::activeTextField($coin, 'dedicatedport', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-3 d-flex align-items-end"><div class="form-check form-switch">'.CHtml::activeCheckBox($coin, 'rpccurl', array('class'=>'form-check-input')).'<label class="form-check-label fw-bold small">Use Curl for RPC</label></div></div>';
+echo '  <div class="col-md-3 d-flex align-items-end"><div class="form-check form-switch">'.CHtml::activeCheckBox($coin, 'rpcssl', array('class'=>'form-check-input')).'<label class="form-check-label fw-bold small">Use SSL for RPC</label></div></div>';
+echo '  <div class="col-md-6"><label class="form-label fw-bold small text-uppercase">Master Wallet Address (Pool)</label>'.CHtml::activeTextField($coin, 'master_wallet', array('class'=>'form-control border-2 fw-bold font-monospace')).'</div>';
+echo '  <div class="col-md-6"><label class="form-label fw-bold small text-uppercase">Z-Address (Privacy/ZCash)</label>'.CHtml::activeTextField($coin, 'wallet_zaddress', array('class'=>'form-control border-2 font-monospace')).'</div>';
+echo '  <div class="col-md-12 d-flex gap-4 bg-light p-3 rounded-3">';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold text-success">Auto-Start Stratum</label>'.CHtml::activeCheckBox($coin, 'auto_ready', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Has GetInfo RPC</label>'.CHtml::activeCheckBox($coin, 'hasgetinfo', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Has SubmitBlock RPC</label>'.CHtml::activeCheckBox($coin, 'hassubmitblock', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Has Masternodes</label>'.CHtml::activeCheckBox($coin, 'hasmasternodes', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Use SegWit</label>'.CHtml::activeCheckBox($coin, 'usesegwit', array('class'=>'form-check-input')).'</div>';
+echo '  </div>';
+echo '</div></div>';
+
+// --- TAB 4: EXCHANGE ---
+echo '<div class="tab-pane fade" id="t-exch" role="tabpanel"><div class="row g-4">';
+echo '  <div class="col-md-6"><label class="form-label fw-bold small text-uppercase">Selected Market</label>'.CHtml::activeTextField($coin, 'market', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-6"><label class="form-label fw-bold small text-uppercase">Manual Price (BTC)</label>'.CHtml::activeTextField($coin, 'price', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-6"><label class="form-label fw-bold small text-uppercase">Deposit Address (Withdraws)</label>'.CHtml::activeTextField($coin, 'deposit_address', array('class'=>'form-control border-2 font-monospace')).'</div>';
+echo '  <div class="col-md-3"><label class="form-label fw-bold small text-uppercase">Sell Threshold</label>'.CHtml::activeTextField($coin, 'sellthreshold', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-md-3"><label class="form-label fw-bold small text-uppercase">Reward Multiplier</label>'.CHtml::activeTextField($coin, 'reward_mul', array('class'=>'form-control border-2')).'</div>';
+echo '  <div class="col-12 d-flex gap-4 bg-light p-3 rounded-3">';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Auto-Exchange Enabled</label>'.CHtml::activeCheckBox($coin, 'auto_exchange', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold text-danger">Disable Selling (Hold)</label>'.CHtml::activeCheckBox($coin, 'dontsell', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Always Sell on Bid</label>'.CHtml::activeCheckBox($coin, 'sellonbid', array('class'=>'form-check-input')).'</div>';
+echo '  </div>';
+echo '</div></div>';
+
+// --- TAB 5: SOCIAL LINKS ---
+echo '<div class="tab-pane fade" id="t-links" role="tabpanel"><div class="row g-3">';
+$links = ['bitcointalk'=>'BitcoinTalk','github'=>'GitHub','site'=>'Website','discord'=>'Discord','twitter'=>'Twitter','facebook'=>'Facebook','exchange'=>'Market Link','explorer'=>'Explorer'];
+foreach($links as $k=>$v) {
+    echo '<div class="col-md-6"><label class="form-label fw-bold small text-uppercase">'.$v.'</label>'.CHtml::activeTextField($coin, 'link_'.$k, array('class'=>'form-control border-2')).'</div>';
+}
+echo '</div></div>';
+
+echo '</div></div>'; // close tab-content and p-4
+
+echo '<div class="card-footer bg-light p-4 text-end border-0">
+        <button type="submit" class="btn btn-primary btn-lg fw-bold px-5 shadow-sm rounded-pill"><i class="fa fa-save me-2"></i> Save Coin Data</button>
+      </div>';
+
+echo CHtml::endForm();
+
+// --- RESTORED CONFIG SECTION (BOTTOM) - ALWAYS SHOW ---
+$port = getAlgoPort($coin->algo);
+$dedport = $coin->dedicatedport;
+$active_port = $dedport ? $dedport : ($port ? $port : 'PORT');
+$coin_id = $coin->id ? $coin->id : '[ID]';
+
+echo '<div class="p-4 border-top bg-white">';
+echo '  <div class="row">';
+
+// Sample .conf
+echo '    <div class="col-md-6 mb-4">';
+echo '      <h6 class="fw-bold text-uppercase small text-muted mb-3"><i class="fa fa-file-invoice me-2"></i>Sample Wallet Config (.conf)</h6>';
+echo '      <div class="position-relative">';
+echo '        <pre class="bg-dark text-success p-3 rounded-3 small shadow-sm mb-0" style="min-height: 250px;">';
+echo "rpcuser=".($coin->rpcuser ? : 'yiimprpc')."\n";
+echo "rpcpassword=".($coin->rpcpasswd ? : 'random_password')."\n";
+echo "rpcport=".($coin->rpcport ? : 'rpc_port')."\n";
+echo "rpcthreads=8\n";
+echo "rpcallowip=127.0.0.1\n";
+echo "# onlynet=ipv4\n";
+echo "maxconnections=12\n";
+echo "daemon=1\n";
+echo "gen=0\n\n";
+echo "alertnotify=echo %s | mail -s \"{$coin->name} alert!\" ".YAAMP_ADMIN_EMAIL."\n";
+echo "blocknotify=/var/stratum/blocknotify ".YAAMP_STRATUM_URL.":{$active_port} {$coin_id} %s\n";
+echo '        </pre>';
+echo '      </div>';
+echo '    </div>';
+
+// Miner command line
+echo '    <div class="col-md-6">';
+echo '      <h6 class="fw-bold text-uppercase small text-muted mb-3"><i class="fa fa-terminal me-2"></i>Miner Command Line</h6>';
+echo '      <pre class="bg-dark text-info p-3 rounded-3 small shadow-sm mb-0" style="white-space: pre-wrap; word-break: break-all;">';
+echo "-a ".($coin->algo ? : 'algo')." -o stratum+tcp://".YAAMP_STRATUM_URL.":{$active_port} -u ".($coin->master_wallet ? : 'YOUR_WALLET_ADDRESS')." -p c=".($coin->symbol ? : 'SYMBOL');
+echo '      </pre>';
+echo '      <div class="alert alert-info mt-3 border-0 small"><i class="fa fa-info-circle me-2"></i>Use these settings to connect your wallet and miners to the pool. '.(!$coin->id ? '<b>Note:</b> ID will be generated after saving.' : '').'</div>';
+echo '    </div>';
+
+echo '  </div>'; // close row
+echo '</div>'; // close p-4
+
+echo '</div></div></div>';
+
+echo '<style>
+    .nav-pills .nav-link.active { background-color: #0d6efd; color: #fff; }
+    .nav-pills .nav-link { color: #6c757d; }
+    .form-control:focus, .form-select:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1); }
+    .text-purple { color: #6f42c1 !important; }
+    .breadcrumb-item + .breadcrumb-item::before { content: "›"; font-size: 1.2rem; vertical-align: middle; }
+    pre { border: 1px solid #333; font-family: "SFMono-Regular", Consolas, monospace !important; }
+</style>';
 ?>
-
-
-

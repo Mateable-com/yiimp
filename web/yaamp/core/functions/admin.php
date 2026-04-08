@@ -4,57 +4,64 @@
 
 function getAdminSideBarLinks()
 {
-$links = <<<end
-<a href="/admin/exchange">Exchanges</a>&nbsp;
-<a href="/admin/botnets">Botnets</a>&nbsp;
-<a href="/admin/user">Users</a>&nbsp;
-<a href="/admin/worker">Workers</a>&nbsp;
-<a href="/admin/version">Version</a>&nbsp;
-<a href="/admin/earning">Earnings</a>&nbsp;
-<a href="/admin/payments">Payments</a>&nbsp;
-<a href="/admin/monsters">Big Miners</a>&nbsp;
-end;
-	return $links;
+    $links = '<div class="btn-group btn-group-sm mb-4 shadow-sm rounded-pill overflow-hidden border">';
+    $items = [
+        ['url' => '/admin', 'name' => 'Dashboard', 'icon' => 'tachometer-alt'],
+        ['url' => '/admin/coinwallets', 'name' => 'Wallets', 'icon' => 'wallet'],
+        ['url' => '/admin/user', 'name' => 'Users', 'icon' => 'users'],
+        ['url' => '/admin/worker', 'name' => 'Workers', 'icon' => 'microchip'],
+        ['url' => '/admin/earning', 'name' => 'Earnings', 'icon' => 'hand-holding-usd'],
+        ['url' => '/admin/payments', 'name' => 'Payments', 'icon' => 'money-bill-wave'],
+        ['url' => '/admin/exchange', 'name' => 'Exchanges', 'icon' => 'exchange-alt'],
+        ['url' => '/admin/monsters', 'name' => 'Monsters', 'icon' => 'ghost'],
+    ];
+
+    foreach ($items as $item) {
+        $active = (strpos($_SERVER['REQUEST_URI'], $item['url']) !== false) ? 'active' : 'btn-light';
+        $links .= '<a href="' . $item['url'] . '" class="btn ' . $active . ' px-3 border-0"><i class="fa fa-' . $item['icon'] . ' me-1 opacity-75"></i>' . $item['name'] . '</a>';
+    }
+    $links .= '</div>';
+    return $links;
 }
 
 // shared by wallet "tabs", to move in another php file...
 function getAdminWalletLinks($coin, $info=NULL, $src='wallet')
 {
-	$html = CHtml::link("<b>COIN PROPERTIES</b>", '/admin/coinupdate?id='.$coin->id);
+    $html = '<div class="d-flex flex-wrap gap-2 mb-4">';
+    
+    // Core Actions
+    $html .= CHtml::link('<i class="fa fa-edit me-1"></i>Properties', '/admin/coinupdate?id='.$coin->id, ['class'=>'btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-sm']);
+    
 	if($info) {
-		$html .= ' || '.$coin->createExplorerLink("<b>EXPLORER</b>");
-		$html .= ' || '.CHtml::link("<b>PEERS</b>", '/admin/coinpeers?id='.$coin->id);
+		$html .= $coin->createExplorerLink('<i class="fa fa-search me-1"></i>Explorer', [], ['class'=>'btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold']);
+		$html .= CHtml::link('<i class="fa fa-network-wired me-1"></i>Peers', '/admin/coinpeers?id='.$coin->id, ['class'=>'btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold']);
 		if (YAAMP_ADMIN_WEBCONSOLE)
-			$html .= ' || '.CHtml::link("<b>CONSOLE</b>", '/admin/coinconsole?id='.$coin->id);
-		$html .= ' || '.CHtml::link("<b>TRIGGERS</b>", '/admin/cointriggers?id='.$coin->id);
+			$html .= CHtml::link('<i class="fa fa-terminal me-1"></i>Console', '/admin/coinconsole?id='.$coin->id, ['class'=>'btn btn-sm btn-dark rounded-pill px-3 fw-bold']);
+		$html .= CHtml::link('<i class="fa fa-bolt me-1"></i>Triggers', '/admin/cointriggers?id='.$coin->id, ['class'=>'btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold']);
 		if ($src != 'wallet')
-			$html .= ' || '.CHtml::link("<b>{$coin->symbol}</b>", '/admin/coin?id='.$coin->id);
+			$html .= CHtml::link('<i class="fa fa-coins me-1"></i>'.$coin->symbol, '/admin/coin?id='.$coin->id, ['class'=>'btn btn-sm btn-info rounded-pill px-3 fw-bold']);
 	}
 
+    // Status Toggles
 	if(!$info && $coin->enable)
-		$html .= '<br/>'.CHtml::link("<b>STOP COIND</b>", '/admin/stopcoin?id='.$coin->id);
+		$html .= CHtml::link('<i class="fa fa-stop-circle me-1 text-danger"></i>Stop', '/admin/stopcoin?id='.$coin->id, ['class'=>'btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold']);
 
 	if($coin->auto_ready)
-		$html .= '<br/>'.CHtml::link("<b>UNSET AUTO</b>", '/admin/coinunsetauto?id='.$coin->id);
+		$html .= CHtml::link('<i class="fa fa-robot me-1"></i>Unset Auto', '/admin/coinunsetauto?id='.$coin->id, ['class'=>'btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold']);
 	else
-		$html .= '<br/>'.CHtml::link("<b>SET AUTO</b>", '/admin/coinsetauto?id='.$coin->id);
+		$html .= CHtml::link('<i class="fa fa-robot me-1"></i>Set Auto', '/admin/coinsetauto?id='.$coin->id, ['class'=>'btn btn-sm btn-outline-success rounded-pill px-3 fw-bold']);
 
-	$html .= '<br/>';
-
+    // Social/External Links
+    $html .= '<div class="ms-auto d-flex gap-2 align-items-center">';
 	if(!empty($coin->link_bitcointalk))
-		$html .= CHtml::link('forum', $coin->link_bitcointalk, array('target'=>'_blank')).' ';
-
+		$html .= CHtml::link('<i class="fab fa-bitcoin text-warning fs-5"></i>', $coin->link_bitcointalk, array('target'=>'_blank', 'title'=>'Bitcointalk Forum'));
 	if(!empty($coin->link_github))
-		$html .= CHtml::link('git', $coin->link_github, array('target'=>'_blank')).' ';
-
+		$html .= CHtml::link('<i class="fab fa-github text-dark fs-5"></i>', $coin->link_github, array('target'=>'_blank', 'title'=>'GitHub Source'));
 	if(!empty($coin->link_site))
-		$html .= CHtml::link('site', $coin->link_site, array('target'=>'_blank')).' ';
+		$html .= CHtml::link('<i class="fa fa-globe text-primary fs-5"></i>', $coin->link_site, array('target'=>'_blank', 'title'=>'Official Website'));
+    $html .= '</div>';
 
-	if(!empty($coin->link_explorer))
-		$html .= CHtml::link('chain', $coin->link_explorer, array('target'=>'_blank','title'=>'External Blockchain Explorer')).' ';
-
-	$html .= CHtml::link('google', 'http://google.com/search?q='.urlencode($coin->name.' '.$coin->symbol.' bitcointalk'), array('target'=>'_blank'));
-
+	$html .= '</div>';
 	return $html;
 }
 

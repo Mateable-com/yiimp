@@ -13,9 +13,10 @@ function BackendRentingUpdate()
 	foreach(yaamp_get_algos() as $algo)
 	{
 		$rent = dboscalar("select rent from hashrate where algo=:algo order by time desc limit 1", array(':algo'=>$algo));
+		$rent_mbtc = $rent * 1000;
 
-		dborun("update jobs set active=true where ready and price>$rent and algo=:algo", array(':algo'=>$algo));
-		dborun("update jobs set active=false where active and price<$rent and algo=:algo", array(':algo'=>$algo));
+		dborun("update jobs set active=true where ready and price>$rent_mbtc and algo=:algo", array(':algo'=>$algo));
+		dborun("update jobs set active=false where active and price<$rent_mbtc and algo=:algo", array(':algo'=>$algo));
 	}
 
 	$list = getdbolist('db_jobsubmits', "status=0");
@@ -122,11 +123,29 @@ function BackendRentingPayout()
 			$refcoin = getdbo('db_coins', $user->coinid);
 			$value = $earning->amount / (($refcoin && $refcoin->price2)? $refcoin->price2: 1);
 
-		//	$value = yaamp_convert_amount_user($coin, $earning->amount, $user);
+			if(!empty($user->rent_address))
+			{
+				$rent_user = getdbosql('db_accounts', "username=:address", array(':address'=>$user->rent_address));
+				if(!$rent_user)
+				{
+					$rent_user = new db_accounts;
+					$rent_user->username = $user->rent_address;
+					$rent_user->coinid = 0;
+					$rent_user->balance = 0;
+					$rent_user->hostaddr = $user->hostaddr;
+					$rent_user->save();
+				}
 
-			$user->last_earning = time();
-			$user->balance += $value;
-			$user->save();
+				$rent_user->last_earning = time();
+				$rent_user->balance += $earning->amount;
+				$rent_user->save();
+			}
+			else
+			{
+				$user->last_earning = time();
+				$user->balance += $value;
+				$user->save();
+			}
 		}
 
 		$delay = time() - 5*60;
@@ -143,7 +162,7 @@ function BackendUpdateDeposit()
 {
 //	debuglog(__FUNCTION__);
 
-	$btc = getdbosql('db_coins', "symbol='BTC'");
+	$btc = getdbosql('db_coins', "symbol=:symbol", array(':symbol'=>YAAMP_RENTER_COIN));
 	if(!$btc) return;
 
 	$remote = new WalletRPC($btc);
@@ -161,68 +180,71 @@ function BackendUpdateDeposit()
 	if(!isset($block['time'])) return;
 	if($block['time'] + 30*60 < time()) return;
 
-	$list = $remote->listaccounts(1);
-	foreach($list as $r=>$a)
+	$transactions = $remote->listtransactions("*", 250, 0, true);
+	if(!is_array($transactions)) return;
+
+	$renter_unconfirmed = array();
+
+	foreach($transactions as $tx)
 	{
-		if($a == 0) continue;
+		if($tx['category'] != 'receive') continue;
+		if(!isset($tx['address'])) continue;
 
-		$b = preg_match('/renter-prod-([0-9]+)/', $r, $m);
-		if(!$b) continue;
-
-		$renter = getdbo('db_renters', $m[1]);
+		$renter = getdbosql('db_renters', "address=:address", array(':address'=>$tx['address']));
 		if(!$renter) continue;
 
-		$ts = $remote->listtransactions(yaamp_renter_account($renter), 1);
-		if(!$ts || !isset($ts[0])) continue;
+		$txid = $tx['txid'];
+		$amount = (double) $tx['amount'];
+		$confirms = (int) $tx['confirmations'];
 
-		$moved = $remote->move(yaamp_renter_account($renter), '', $a);
-		if(!$moved) continue;
+		if($confirms >= 1)
+		{
+			$exists = getdbosql('db_rentertxs', "renterid=:renterid AND tx=:tx AND type='deposit'",
+				array(':renterid'=>$renter->id, ':tx'=>$txid));
 
-		debuglog("deposit $renter->id $renter->address, $a");
+			if(!$exists)
+			{
+				debuglog("deposit $renter->id $renter->address, $amount");
 
-		$rentertx = new db_rentertxs;
-		$rentertx->renterid = $renter->id;
-		$rentertx->time = time();
-		$rentertx->amount = $a;
-		$rentertx->type = 'deposit';
-		$rentertx->tx = isset($ts[0]['txid'])? $ts[0]['txid']: '';
-		$rentertx->save();
+				$rentertx = new db_rentertxs;
+				$rentertx->renterid = $renter->id;
+				$rentertx->time = time();
+				$rentertx->amount = $amount;
+				$rentertx->type = 'deposit';
+				$rentertx->tx = $txid;
+				$rentertx->save();
 
-		$renter->unconfirmed = 0;
-		$renter->balance += $a;
-		$renter->updated = time();
-		$renter->save();
+				$renter->balance += $amount;
+				$renter->updated = time();
+				$renter->save();
+			}
+		}
+		else if($confirms == 0)
+		{
+			if(!isset($renter_unconfirmed[$renter->id])) $renter_unconfirmed[$renter->id] = 0;
+			$renter_unconfirmed[$renter->id] += $amount;
+		}
 	}
 
-	$list = $remote->listaccounts(0);
-	foreach($list as $r=>$a)
+	// Update unconfirmed balances
+	$renters = getdbolist('db_renters');
+	foreach($renters as $renter)
 	{
-		if($a == 0) continue;
-
-		$b = preg_match('/renter-prod-([0-9]+)/', $r, $m);
-		if(!$b) continue;
-
-		$renter = getdbo('db_renters', $m[1]);
-		if(!$renter) continue;
-
-		debuglog("unconfirmed $renter->id $renter->address, $a");
-
-		$renter->unconfirmed = $a;
-		$renter->updated = time();
-		$renter->save();
+		$unconfirmed = isset($renter_unconfirmed[$renter->id]) ? $renter_unconfirmed[$renter->id] : 0;
+		if($renter->unconfirmed != $unconfirmed)
+		{
+			if($unconfirmed > 0) debuglog("unconfirmed $renter->id $renter->address, $unconfirmed");
+			$renter->unconfirmed = $unconfirmed;
+			$renter->updated = time();
+			$renter->save();
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	$received1 = $remote->getbalance('bittrex', 1);		//nicehash payments
-	if($received1>0)
-	{
-		$moved = $remote->move('bittrex', '', $received1);
-		debuglog("moved from bittrex $received1");
-
-		dborun("update renters set balance=balance+$received1 where id=7");
-		dborun("update renters set custom_start=custom_start+$received1 where id=7");
-	}
+	// handle generic deposit to 'bittrex' label/account if still used for some reason, but modern way is different
+	// for now let's just keep the legacy logic but use listtransactions for it too if needed.
+	// Actually id=7 and 'bittrex' seems very specific to a project.
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 

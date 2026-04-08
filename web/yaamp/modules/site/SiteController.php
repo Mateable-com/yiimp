@@ -39,6 +39,11 @@ class SiteController extends CommonController
 		$this->render('mining');
 	}
 
+	public function actionCoins()
+	{
+		$this->render('coins');
+	}
+
 	public function actionMiners()
 	{
 		$this->render('miners');
@@ -164,12 +169,12 @@ class SiteController extends CommonController
 			$coin = getdbo('db_coins', $user->coinid);
 
 			if($coin)
-				echo "$balance $coin->symbol - ".YAAMP_SITE_NAME;
+				echo "$balance $coin->symbol - ".settings_get('site_name', YAAMP_SITE_NAME);
 			else
-				echo "$balance - ".YAAMP_SITE_NAME;
+				echo "$balance - ".settings_get('site_name', YAAMP_SITE_NAME);
 		}
 		else
-			echo YAAMP_SITE_URL;
+			echo settings_get('site_name', YAAMP_SITE_URL);
 	}
 
 	/////////////////////////////////////////////////

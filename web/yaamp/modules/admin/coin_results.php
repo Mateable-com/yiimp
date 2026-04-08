@@ -22,7 +22,7 @@ $symbol = !empty($coin->symbol2) ? $coin->symbol2 : $coin->symbol;
 echo '<div class="container-fluid py-4">';
 
 // --- Coin Hero Header ---
-echo '<div class="card shadow-sm border-0 mb-4 bg-dark text-white overflow-hidden">';
+echo '<div class="card shadow-sm border-0 mb-4 bg-dark text-white overflow-hidden rounded-3">';
 echo '  <div class="card-body p-4 d-flex align-items-center">';
 echo '    <div class="me-4 shadow-sm bg-white rounded-circle p-2" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">';
 echo '      <img src="'.$coin->image.'" style="max-width: 60px; max-height: 60px;">';
@@ -30,186 +30,121 @@ echo '    </div>';
 echo '    <div class="flex-grow-1">';
 echo '      <h2 class="mb-1 fw-bold">'.$coin->name.' <span class="text-primary fs-4">('.$coin->symbol.')</span></h2>';
 echo '      <div class="d-flex flex-wrap gap-2">';
-echo '        <span class="badge bg-primary"><i class="fa fa-microchip me-1"></i>'.$coin->algo.'</span>';
+echo '        <span class="badge bg-primary"><i class="fa fa-microchip me-1 text-white-50"></i>'.$coin->algo.'</span>';
 echo '        '.($coin->enable ? '<span class="badge bg-success">ACTIVE</span>' : '<span class="badge bg-danger">DISABLED</span>');
-echo '        '.($coin->auto_exchange ? '<span class="badge bg-info text-dark">AUTO-EXCHANGE</span>' : '<span class="badge bg-warning text-dark">MINING ONLY</span>');
-echo '        '.($coin->auxpow ? '<span class="badge bg-purple" style="background-color: #6f42c1;">AUXPOW</span>' : '');
+echo '        '.($coin->auto_ready ? '<span class="badge bg-info text-dark">AUTO-READY</span>' : '<span class="badge bg-warning text-dark">MANUAL</span>');
+if($coin->auxpow) echo '        <span class="badge bg-purple" style="background-color: #6f42c1;">AUXPOW</span>';
 echo '      </div>';
-if (YAAMP_ALLOW_EXCHANGE) {
-    $reserved2 = bitcoinvaluetoa(dboscalar("SELECT SUM(amount*price) FROM earnings WHERE status!=2 AND userid IN (SELECT id FROM accounts WHERE coinid={$coin->id})"));
-    echo '<div class="mt-2 small text-info fw-bold">Earnings: '.$reserved2.' BTC</div>';
-}
 echo '    </div>';
-echo '    <div class="text-end d-none d-md-block">';
-echo '      <div class="small text-muted mb-1 text-uppercase">Current Price</div>';
+echo '    <div class="text-end d-none d-md-block border-start border-secondary border-opacity-25 ps-4 ms-4">';
+echo '      <div class="small text-muted mb-1 text-uppercase fw-bold" style="letter-spacing: 1px;">Current Price</div>';
 echo '      <h3 class="mb-0 fw-bold text-success">'.bitcoinvaluetoa($coin->price).' <span class="fs-6 text-muted">BTC</span></h3>';
 echo '    </div>';
 echo '  </div>';
 echo '</div>';
 
-// --- Quick Financial Cards ---
+// --- Wallet Errors / Sync Status ---
+if(!empty($coin->errors)) {
+    echo '<div class="alert alert-danger border-0 shadow-sm mb-4 mx-2 fw-bold"><i class="fa fa-exclamation-triangle me-2"></i>WALLET ERROR: '.$coin->errors.'</div>';
+}
+
+if($coin->block_height < $coin->target_height) {
+    $pct = $coin->target_height > 0 ? round($coin->block_height * 100 / $coin->target_height, 2) : 0;
+    echo '<div class="card shadow-sm border-0 mb-4 mx-2 bg-light"><div class="card-body py-2">';
+    echo '  <div class="d-flex justify-content-between mb-1 small fw-bold text-muted"><span><i class="fa fa-sync fa-spin me-1"></i> Blockchain Syncing...</span><span>'.$pct.'%</span></div>';
+    echo '  <div class="progress" style="height: 8px;"><div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: '.$pct.'%"></div></div>';
+    echo '</div></div>';
+}
+
+// --- Financial Quick-Stats ---
 echo '<div class="row g-3 mb-4">';
 $cards = [
-    ['label' => 'Balance (DB)', 'val' => $balance_db, 'sub' => bitcoinvaluetoa($coin->balance * $coin->price).' BTC', 'color' => 'primary', 'icon' => 'database'],
-    ['label' => 'Owned (Wallet)', 'val' => bitcoinvaluetoa($coin->available), 'sub' => $symbol, 'color' => 'success', 'icon' => 'vault'],
-    ['label' => 'Owed to Miners', 'val' => $owed_alt, 'sub' => $owed_btc.' BTC', 'color' => 'danger', 'icon' => 'user-clock', 'link' => "/admin/earning?id=".$coin->id],
+    ['label' => 'Pool Balance', 'val' => $balance_db, 'sub' => bitcoinvaluetoa($coin->balance * $coin->price).' BTC', 'color' => 'primary', 'icon' => 'university'],
+    ['label' => 'Wallet Owned', 'val' => bitcoinvaluetoa($coin->available), 'sub' => $symbol, 'color' => 'success', 'icon' => 'wallet'],
+    ['label' => 'Owed to Miners', 'val' => $owed_alt, 'sub' => $owed_btc.' BTC', 'color' => 'danger', 'icon' => 'users-clock', 'link' => "/admin/earning?id=".$coin->id],
     ['label' => 'Total Cleared', 'val' => altcoinvaluetoa($reserved1), 'sub' => $symbol, 'color' => 'info', 'icon' => 'check-double', 'link' => "/admin/payments?id=".$coin->id],
 ];
 foreach ($cards as $c) {
-    echo '<div class="col-md-6 col-lg-3"><div class="card shadow-sm h-100 border-start border-'.$c['color'].' border-4"><div class="card-body">';
-    echo '<div class="d-flex justify-content-between align-items-center mb-2"><span class="text-muted small fw-bold text-uppercase">'.$c['label'].'</span><i class="fa fa-'.$c['icon'].' text-'.$c['color'].' opacity-50"></i></div>';
+    echo '<div class="col-md-6 col-lg-3"><div class="card shadow-sm h-100 border-0 rounded-3"><div class="card-body">';
+    echo '<div class="d-flex justify-content-between align-items-center mb-2"><span class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">'.$c['label'].'</span><i class="fa fa-'.$c['icon'].' text-'.$c['color'].' opacity-25"></i></div>';
     echo '<h4 class="mb-1 fw-bold">'.(isset($c['link']) ? CHtml::link($c['val'], $c['link'], ['class'=>'text-decoration-none text-dark']) : $c['val']).'</h4>';
     echo '<div class="small text-muted">'.$c['sub'].'</div></div></div></div>';
 }
 echo '</div>';
 
-// --- Market & Technical Row ---
-echo '<div class="row g-4 mb-4"><div class="col-lg-12"><div class="card shadow-sm"><div class="card-header bg-white py-3 d-flex align-items-center">';
-echo '<h5 class="mb-0 fw-bold me-auto"><i class="fa fa-university me-2 text-primary"></i>Market Management</h5>';
-echo '<a href="/admin/bookmarkAdd?id='.$coin->id.'" class="btn btn-sm btn-outline-success"><i class="fa fa-plus me-1"></i>Add Bookmark</a></div>';
-echo '<div class="card-body p-0 table-responsive"><table class="table table-hover align-middle mb-0 small"><thead class="table-light text-muted text-uppercase" style="font-size: 0.7rem;"><tr>';
-echo '<th>Market/Label</th><th>Bid</th><th>Ask</th><th>Address</th><th>Balance</th><th>Locked</th><th>Sent</th><th>Traded</th><th>Message</th><th>Actions</th></tr></thead><tbody>';
+// --- Main Row: Markets & Technical ---
+echo '<div class="row g-4 mb-4">';
+
+// Left: Markets
+echo '<div class="col-lg-8">';
+echo '  <div class="card shadow-sm border-0 rounded-3 h-100">';
+echo '    <div class="card-header bg-white py-3 d-flex align-items-center border-0">';
+echo '      <h5 class="mb-0 fw-bold"><i class="fa fa-chart-bar me-2 text-primary"></i>Market Links & Bookmarks</h5>';
+echo '      <div class="ms-auto"><a href="/admin/bookmarkAdd?id='.$coin->id.'" class="btn btn-xs btn-outline-success rounded-pill fw-bold px-3">Add Bookmark</a></div>';
+echo '    </div>';
+echo '    <div class="card-body p-0 table-responsive">';
+echo '      <table class="table table-hover align-middle mb-0 small"><thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem;"><tr>';
+echo '        <th class="ps-4">Market</th><th>Bid</th><th>Ask</th><th>Address</th><th class="text-end">Balance</th><th class="text-end pe-4">Actions</th></tr></thead><tbody>';
 
 $markets = getdbolist('db_markets', "coinid={$coin->id} AND NOT deleted ORDER BY disabled, priority DESC, price DESC");
-$bestmarket = getBestMarket($coin);
 foreach ($markets as $m) {
-    $rowClass = $m->disabled ? 'opacity-50 grayscale' : ($bestmarket && $m->id == $bestmarket->id ? 'table-success' : '');
-    $late = $m->lastsent > $m->lasttraded && $m->lasttraded ? '<span class="badge bg-danger">LATE</span>' : '';
-    echo '<tr class="'.$rowClass.'"><td class="fw-bold"><a href="'.getMarketUrl($coin, $m->name).'" target="_blank" class="text-decoration-none">'.$m->name.'</a></td>';
-    echo '<td class="text-success fw-bold">'.bitcoinvaluetoa($m->price).'</td><td class="text-muted">'.bitcoinvaluetoa($m->price2).'</td><td>';
+    $rowClass = $m->disabled ? 'opacity-50 grayscale bg-light' : '';
+    echo '<tr class="'.$rowClass.'"><td class="ps-4 fw-bold">'.CHtml::link($m->name, getMarketUrl($coin, $m->name), ['target'=>'_blank','class'=>'text-decoration-none']).'</td>';
+    echo '<td class="text-success fw-bold">'.bitcoinvaluetoa($m->price).'</td><td class="text-muted">'.bitcoinvaluetoa($m->price2).'</td>';
+    echo '<td><span class="text-muted" title="'.$m->deposit_address.'">'.(empty($m->deposit_address)?'-':substr($m->deposit_address,0,12).'...').'</span></td>';
+    echo '<td class="text-end">'.($m->balance > 0 ? bitcoinvaluetoa($m->balance) : '-').'</td>';
+    echo '<td class="text-end pe-4"><div class="btn-group">';
     if (!empty($m->deposit_address)) {
         $name = CJavaScript::encode($m->name); $addr = CJavaScript::encode($m->deposit_address);
-        echo CHtml::link(YAAMP_ALLOW_EXCHANGE ? "sell" : "send", "javascript:;", ['onclick' => "return showSellAmountDialog($name, $addr, {$m->id});", 'class'=>'btn btn-xs btn-primary py-0 px-1 me-1']);
-        echo '<span class="text-muted" title="'.$m->deposit_address.'">'.substr($m->deposit_address,0,10).'...</span>';
+        echo CHtml::link("Send", "javascript:;", ['onclick' => "return showSellAmountDialog($name, $addr, {$m->id});", 'class'=>'btn btn-xs btn-primary py-0 px-2']);
     }
-    echo '</td><td>'.($m->balance > 0 ? bitcoinvaluetoa($m->balance) : '-').'</td><td>'.($m->ontrade > 0 ? bitcoinvaluetoa($m->ontrade) : '-').'</td>';
-    echo '<td>'.(empty($m->lastsent) ? "" : datetoa2($m->lastsent).' ago').'</td><td>'.(empty($m->lasttraded) ? "" : datetoa2($m->lasttraded).' ago').'</td>';
-    echo '<td>'.$late.' <span class="small text-muted">'.$m->message.'</span></td>';
-    echo '<td><div class="btn-group"><a href="/market/update?id='.$m->id.'" class="btn btn-sm btn-outline-secondary py-0 px-1"><i class="fa fa-edit"></i></a>';
-    if ($m->disabled) echo '<a href="/market/enable?id='.$m->id.'&en=1" class="btn btn-sm btn-outline-success py-0 px-1"><i class="fa fa-play"></i></a>';
-    else echo '<a href="/market/enable?id='.$m->id.'&en=0" class="btn btn-sm btn-outline-warning py-0 px-1"><i class="fa fa-pause"></i></a>';
-    echo '<a href="/market/delete?id='.$m->id.'" class="btn btn-sm btn-outline-danger py-0 px-1"><i class="fa fa-trash"></i></a></div></td></tr>';
+    echo '<a href="/market/update?id='.$m->id.'" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="fa fa-edit"></i></a>';
+    echo '</div></td></tr>';
 }
-$bookmarks = getdbolist('db_bookmarks', "idcoin={$coin->id} ORDER BY lastused DESC");
-foreach ($bookmarks as $b) {
-    echo '<tr class="table-light opacity-75"><td class="fw-bold"><i class="fa fa-bookmark text-warning me-1"></i>'.$b->label.'</td><td colspan="2"></td><td>';
-    if (!empty($b->address)) {
-        $name = CJavaScript::encode($b->label); $addr = CJavaScript::encode($b->address);
-        echo CHtml::link("send", "javascript:;", ['onclick' => "return showSellAmountDialog($name, $addr, 0, {$b->id});", 'class'=>'btn btn-xs btn-warning py-0 px-1 me-1']);
-        echo '<span class="text-muted">'.substr($b->address,0,10).'...</span>';
-    }
-    echo '</td><td colspan="2"></td><td class="small">'.(empty($b->lastused) ? "" : datetoa2($b->lastused).' ago').'</td><td colspan="2"></td>';
-    echo '<td><a href="/admin/bookmarkDel?id='.$b->id.'" class="btn btn-sm btn-outline-danger py-0 px-1"><i class="fa fa-times"></i></a></td></tr>';
-}
-echo '</tbody></table></div></div></div></div>';
+echo '      </tbody></table></div></div></div>';
 
-// --- Technical & Transactions Row ---
-echo '<div class="row g-4 mb-4"><div class="col-lg-8"><div class="card shadow-sm h-100"><div class="card-header bg-white py-3"><h5 class="mb-0 fw-bold"><i class="fa fa-list-ul me-2 text-primary"></i>Recent Transactions</h5></div>';
-echo '<div class="card-body p-0 table-responsive"><table class="table table-hover table-sm mb-0 small"><thead class="table-light text-muted"><tr>';
-echo '<th>Time</th><th>Category</th><th>Amount</th><th>Height</th><th>Diff</th><th>Confirm</th><th>Address</th><th>Tx</th></tr></thead><tbody>';
-
-// --- START RESTORED TRANSACTION LOGIC ---
-$list_since = arraySafeVal($_GET, 'since', time() - (7 * 24 * 3600));
-$maxrows = (int) arraySafeVal($_GET, 'rows', 500);
-$maxrows = max($maxrows, 250); $maxrows = min($maxrows, 2500);
-
-$account = '';
-if ($DCR || $DGB) $account = '*';
-else if ($ETH) $account = $coin->master_wallet;
-else if ($coin->symbol == "BTC") $account = '*';
-
-$txs = $remote->listtransactions($account, $maxrows);
-if (empty($txs)) { $account = '*'; $txs = $remote->listtransactions($account, $maxrows); }
-if (empty($txs)) { if (!empty($remote->error)) echo "<tr><td colspan='8' class='text-danger ps-3'>RPC Error: {$remote->error}</td></tr>"; $txs = $remote->listtransactions($account, 200); }
-
-$txs_array = array(); $lastday = '';
+// Right: Technical Info
+echo '<div class="col-lg-4">';
+echo '  <div class="card shadow-sm border-0 rounded-3 h-100">';
+echo '    <div class="card-header bg-primary text-white py-3 border-0"><h5 class="mb-0 fw-bold"><i class="fa fa-cog me-2"></i>Technical Info</h5></div>';
+echo '    <div class="card-body p-0"><ul class="list-group list-group-flush">';
 $info = $remote->getinfo();
-if (!empty($txs)) {
-    $tx = reset($txs);
-    if (count($txs) == $maxrows && isset($tx['time'])) $lastday = strftime('%F', $tx['time']);
-    foreach ($txs as $tx) { if (arraySafeVal($tx, 'time', $list_since + 1) > $list_since) $txs_array[] = $tx; }
-    krsort($txs_array);
-}
-
-if ($DCR && !empty($info)) {
-    $amountin_mul = $info['version'] >= 10500 ? 1.0 : 0.00000001;
-    $prev_tx = array(); $lastday = '';
-    foreach ($txs_array as $key => $tx) {
-        $txs_array[$key]['time'] = min($tx['timereceived'], arraySafeVal($tx, 'blocktime', $tx['time']));
-        $prev_txid = arraySafeVal($prev_tx, "txid"); $category = $tx['category'];
-        if (arraySafeVal($tx, 'txtype') == 'ticket') {
-            $txs_array[$key]['category'] = 'ticket';
-            if ($category != 'receive' || $prev_txid === arraySafeVal($tx, "txid")) unset($txs_array[$key]);
-            else $txs_array[$key]['amount'] = 0 - $tx['amount'];
-            continue;
-        }
-        if ($category == 'send' && arraySafeVal($tx, 'generated')) { $txs_array[$key]['category'] = 'spent'; }
-        else if ($category == 'send' && $tx['amount'] == -0) {
-            if ($tx['vout'] > 0) $category = 'spent';
-            else if (arraySafeVal($tx, "confirmations") >= 256) $category = 'receive';
-            else $category = 'immature';
-            if ($category == 'spent' && arraySafeVal($tx, 'txtype') == 'vote') $category = 'unlock';
-            $txs_array[$key]['category'] = $category;
-            if ($tx['vout'] == 0) { $t = $remote->getrawtransaction($tx['txid'], 1); if ($t && isset($t['vin'][0])) $txs_array[$key]['amount'] = $t['vin'][0]['amountin'] * $amountin_mul; }
-            if ($category == 'unlock') { $t = $remote->getrawtransaction($tx['txid'], 1); if ($t && isset($t['vin'][1])) $txs_array[$key]['amount'] = $t['vin'][1]['amountin'] * $amountin_mul; }
-        } else if ($category == 'send' && $prev_txid === arraySafeVal($tx, "txid")) { if ($prev_tx['amount'] == 0 - $tx['amount']) $txs_array[$key]['category'] = 'spent'; }
-        else if ($category == 'receive') { $prev_tx = $tx; }
-        if ($lastday == '' && count($txs) == $maxrows) $lastday = strftime('%F', $tx['time']);
-    }
-    if ($info['version'] < 1010200) ksort($txs_array);
-}
-
-$rows_displayed = 0;
-foreach ($txs_array as $tx) {
-    if (!isset($tx['amount'])) { if (!isset($tx['reward'])) continue; $tx['amount'] = $tx['reward']; }
-    $category = arraySafeVal($tx, 'category');
-    if ($category == 'spent') continue;
-    $block = isset($tx['blockhash']) ? $remote->getblock($tx['blockhash']) : null;
-    $badge = ($category == 'receive') ? 'bg-success' : (($category == 'immature') ? 'bg-warning text-dark' : (($category == 'generate') ? 'bg-info text-dark' : 'bg-secondary'));
-    
-    echo '<tr>';
-    if (!isset($tx['time'])) { echo '<td colspan="8">' . json_encode($tx) . '</td>'; continue; }
-    echo '<td class="fw-bold">'.datetoa2($tx['time']).'</td>';
-    echo '<td><span class="badge '.$badge.'">'.strtoupper($category).'</span></td>';
-    echo '<td class="fw-bold">'.$tx['amount'].'</td>';
-    echo '<td>'.($block ? $block['height'] : '').'</td><td>'.($block ? round_difficulty($block['difficulty']) : '').'</td>';
-    echo '<td>'.arraySafeVal($tx, 'confirmations').'</td>';
-    echo '<td>'.(isset($tx['address']) ? (dboscalar("SELECT count(*) FROM accounts WHERE username='{$tx['address']}'") ? CHtml::link(substr($tx['address'],0,12).'...', '/?address='.$tx['address']) : substr($tx['address'],0,12).'...') : '-').'</td>';
-    echo '<td>'.(isset($tx['txid']) ? $coin->createExplorerLink(substr($tx['txid'],0,7), ['txid'=>$tx['txid']], ['target'=>'_blank']) : '-').'</td></tr>';
-    if (++$rows_displayed >= $maxrows) break;
-}
-echo '</tbody></table></div>';
-$more_url = '/admin/coin?id='.$coin->id.'&since='.(time()-31*24*3600).'&rows='.($maxrows*2);
-echo '<div class="card-footer bg-light py-2 text-center small">'.CHtml::link('Click here to show more transactions...', $more_url, ['class'=>'text-decoration-none']).'</div></div></div>';
-
-// Right: Technical Info & Sums
-echo '<div class="col-lg-4"><div class="card shadow-sm border-0 mb-4"><div class="card-header bg-primary text-white py-3 fw-bold"><i class="fa fa-cogs me-2"></i>Technical Info</div><div class="card-body p-0 small"><ul class="list-group list-group-flush">';
 if ($info) {
-    $zbalance = (!is_null($coin->wallet_zaddress) && trim($coin->wallet_zaddress) != '') ? $remote->z_getbalance(trim($coin->wallet_zaddress)) : null;
-    $tech_rows = [['label'=>'Difficulty', 'val'=>round_difficulty($coin->difficulty)], ['label'=>'Height', 'val'=>number_format(arraySafeVal($info, 'blocks', 0))], ['label'=>'Connections', 'val'=>arraySafeVal($info, 'connections', 0), 'link'=>'/admin/coinpeers?id='.$coin->id], ['label'=>'Balance (Wallet)', 'val'=>altcoinvaluetoa($info['balance'])]];
-    if ($zbalance) $tech_rows[] = ['label' => 'Z-Balance', 'val' => bitcoinvaluetoa($zbalance)];
-    if (isset($info['stake'])) $tech_rows[] = ['label' => 'Staking', 'val' => $info['stake']];
-    if ($DCR) {
-        $balances = $remote->getbalance('*', 0); $stake = 0; if (isset($balances["balances"])) foreach ($balances["balances"] as $accb) $stake += arraySafeVal($accb, 'lockedbytickets', 0);
-        $stakeinfo = $remote->getstakeinfo(); $tech_rows[] = ['label' => 'DCR Tickets', 'val' => $stake.' ('.arraySafeVal($stakeinfo,'live',0).')'];
-        $tech_rows[] = ['label' => 'Ticket Price', 'val' => arraySafeVal($stakeinfo,'difficulty'), 'link' => "https://dcrstats.com/"];
+    $rows = [['label'=>'RPC Host', 'val'=>$coin->rpchost], ['label'=>'RPC Port', 'val'=>$coin->rpcport], ['label'=>'Difficulty', 'val'=>round_difficulty($coin->difficulty)], ['label'=>'Blocks', 'val'=>number_format($coin->block_height)], ['label'=>'Connections', 'val'=>arraySafeVal($info,'connections',0)]];
+    foreach($rows as $r) {
+        echo '<li class="list-group-item d-flex justify-content-between align-items-center py-2 px-4">';
+        echo '<span class="text-muted small fw-bold text-uppercase">'.$r['label'].'</span><b class="text-dark">'.$r['val'].'</b></li>';
     }
-    foreach ($tech_rows as $r) {
-        echo '<li class="list-group-item d-flex justify-content-between align-items-center py-2"><span class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">'.$r['label'].'</span>';
-        echo '<b class="text-dark">'.(isset($r['link']) ? CHtml::link($r['val'], $r['link'], ['class'=>'text-decoration-none', 'target'=>(strpos($r['link'],'http')===0?'_blank':'')]) : $r['val']).'</b></li>';
-    }
-} else { echo '<li class="list-group-item text-danger py-4 text-center">RPC ERROR: '.$remote->error.'</li>'; }
-echo '</ul></div><div class="card-footer bg-light py-2"><a href="/admin/coinupdate?id='.$coin->id.'" class="btn btn-sm btn-primary w-100 fw-bold">Edit Config</a></div></div>';
+} else { echo '<li class="list-group-item text-danger py-4 text-center">WALLET OFFLINE: '.$remote->error.'</li>'; }
+echo '    </ul></div>';
+echo '    <div class="card-footer bg-light border-0 p-3"><a href="/admin/coinupdate?id='.$coin->id.'" class="btn btn-sm btn-primary w-100 fw-bold shadow-sm">Edit Coin Configuration</a></div>';
+echo '  </div></div></div>';
 
-// Sums Table Card
-echo '<div class="card shadow-sm"><div class="card-header bg-dark text-white py-2 fw-bold small">Daily Summary</div><div class="card-body p-0 table-responsive">';
-echo '<table class="table table-sm mb-0 small"><thead class="table-light text-muted"><tr><th>Day</th><th>Category</th><th class="text-end">Sum</th><th class="text-end">BTC</th></tr></thead><tbody>';
-$sums = [];
-foreach ($txs_array as $tx) { if (!isset($tx['time'], $tx['amount']) || arraySafeVal($tx,'category') == 'spent') continue; $day = strftime('%F', $tx['time']); if ($day == $lastday) break; $key = $day.' '.$tx['category']; $sums[$key] = arraySafeVal($sums, $key) + $tx['amount']; }
-foreach ($sums as $key => $amount) {
-    $parts = explode(' ', $key);
-    echo '<tr><td class="fw-bold">'.substr($parts[0], 5).'</td><td>'.$parts[1].'</td><td class="text-end fw-bold text-primary">'.round($amount,4).'</td><td class="text-end small text-muted">'.bitcoinvaluetoa($coin->price * $amount).'</td></tr>';
-}
-if (empty($sums)) echo '<tr><td colspan="4" class="text-center py-3 text-muted">No activity found</td></tr>';
-echo '</tbody></table></div></div></div></div></div>';
+// --- Transactions Row ---
+echo '<div class="card shadow-sm border-0 rounded-3">';
+echo '  <div class="card-header bg-dark text-white py-3"><h5 class="mb-0 fw-bold"><i class="fa fa-list-ul me-2 text-info"></i>Recent Transactions</h5></div>';
+echo '  <div class="card-body p-0 table-responsive">';
+echo '    <table class="table table-hover table-sm mb-0 small"><thead class="table-light text-muted"><tr>';
+echo '      <th class="ps-4">Time</th><th>Category</th><th>Amount</th><th>Confirmations</th><th>Address</th><th class="pe-4">Explorer</th></tr></thead><tbody>';
+
+$maxrows = (int) arraySafeVal($_GET, 'rows', 50);
+$account = ($coin->symbol == "BTC" || $DCR || $DGB) ? '*' : '';
+$txs = $remote->listtransactions($account, $maxrows);
+
+if (!empty($txs) && is_array($txs)) {
+    krsort($txs);
+    foreach($txs as $tx) {
+        $category = arraySafeVal($tx, 'category');
+        if ($category == 'spent') continue;
+        $badge = ($category == 'receive') ? 'bg-success' : (($category == 'immature') ? 'bg-warning text-dark' : 'bg-secondary');
+        echo '<tr><td class="ps-4 fw-bold">'.datetoa2($tx['time']).'</td>';
+        echo '<td><span class="badge '.$badge.' text-uppercase" style="font-size: 0.6rem;">'.$category.'</span></td>';
+        echo '<td class="fw-bold">'.arraySafeVal($tx, 'amount', 0).'</td>';
+        echo '<td>'.arraySafeVal($tx, 'confirmations', 0).'</td>';
+        echo '<td>'.(isset($tx['address']) ? substr($tx['address'],0,15).'...' : '-').'</td>';
+        echo '<td class="pe-4">'.(isset($tx['txid']) ? $coin->createExplorerLink(substr($tx['txid'],0,8), ['txid'=>$tx['txid']], ['target'=>'_blank']) : '-').'</td></tr>';
+    }
+} else { echo '<tr><td colspan="6" class="py-4 text-center text-muted">No recent transactions found or wallet unreachable.</td></tr>'; }
+
+echo '</tbody></table></div></div></div>';
 ?>

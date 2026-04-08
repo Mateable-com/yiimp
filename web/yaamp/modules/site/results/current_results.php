@@ -1,187 +1,127 @@
 <?php
 $defaultalgo = user()->getState('yaamp-algo');
 
-echo '<div class="card mb-4 shadow-sm">';
-echo '  <div class="card-header bg-dark text-white fw-bold py-2"><i class="fa fa-chart-line me-2"></i>Pool Status</div>';
-echo '  <div class="card-body p-0 table-responsive">';
+echo '<div class="card shadow-lg border-0 mb-4 rounded-4 overflow-hidden">';
+echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-broadcast-tower me-2 text-primary"></i>Live Stratum Performance</h5>';
+echo '    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">Real-time Data</span>';
+echo '  </div>';
+echo '  <div class="card-body p-0">';
+echo '    <div class="table-responsive">';
+echo '      <table class="table table-hover align-middle mb-0" id="maintable1">';
+echo '        <thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">';
+echo '          <tr>';
+echo '            <th class="ps-4">Algorithm / Coin</th>';
+echo '            <th class="text-center">Exchange</th>';
+echo '            <th class="text-center">Min Payout</th>';
+echo '            <th class="text-center">Port</th>';
+echo '            <th class="text-center">Users</th>';
+echo '            <th class="text-center">Workers <small>(S/L)</small></th>';
+echo '            <th class="text-center">Pool Hashrate <small>(S/L/T)</small></th>';
+echo '            <th class="text-center">Network Hash</th>';
+echo '            <th class="text-center">Fees</th>';
+echo '            <th class="text-end pe-4">24h Actual*</th>';
+echo '          </tr>';
+echo '        </thead>';
+echo '        <tbody>';
 
-echo '<table class="table table-hover table-sm mb-0" id="maintable1">';
-echo <<<END
-<thead class="table-light">
-<tr>
-<th class="ps-3">Algorithm / Coin</th>
-<th class="text-center">Exchange</th>
-<th class="text-center">Min Payout</th>
-<th class="text-center">Port</th>
-<th class="text-center">Users</th>
-<th class="text-center">Workers<br/><small class="text-muted">(Shared/Solo)</small></th>
-<th class="text-center">Pool HashRate<br/><small class="text-muted">(Shared/Solo/Total)</small></th>
-<th class="text-center">Network Hash</th>
-<th class="text-center">Fees</th>
-<th class="text-end pe-3">24h Actual*</th>
-</tr>
-</thead>
-<tbody>
-END;
-
-$best_algo = '';
-$best_norm = 0;
-$algos = array();
-
-foreach (yaamp_get_algos() as $algo)
-{
+$best_algo = ''; $best_norm = 0; $algos = array();
+foreach (yaamp_get_algos() as $algo) {
     $algo_norm = yaamp_get_algo_norm($algo);
-    $price = controller()
-        ->memcache
-        ->get_database_scalar("current_price-$algo", "select price from hashrate where algo=:algo order by time desc limit 1", array(
-        ':algo' => $algo
-    ));
-    $norm = $price * $algo_norm;
-    $norm = take_yaamp_fee($norm, $algo);
-    $algos[] = array(
-        $norm,
-        $algo
-    );
-    if ($norm > $best_norm)
-    {
-        $best_norm = $norm;
-        $best_algo = $algo;
-    }
+    $price = controller()->memcache->get_database_scalar("current_price-$algo", "select price from hashrate where algo=:algo order by time desc limit 1", array(':algo' => $algo));
+    $norm = take_yaamp_fee($price * $algo_norm, $algo);
+    $algos[] = [$norm, $algo];
+    if ($norm > $best_norm) { $best_norm = $norm; $best_algo = $algo; }
 }
+usort($algos, function($a,$b){ return $a[0] < $b[0]; });
 
-function cmp($a, $b)
-{
-    return $a[0] < $b[0];
-}
+$total_coins = $total_workers = $total_solo_workers = 0;
 
-usort($algos, 'cmp');
-
-$total_coins = 0;
-$total_users = 0;
-$total_workers = 0;
-$total_solo_workers = 0;
-$showestimates = false;
-
-foreach ($algos as $item)
-{
-    $norm = $item[0];
-    $algo = $item[1];
-    
-    $coins = getdbocount('db_coins', "enable and visible and auto_ready and algo=:algo", array(
-        ':algo' => $algo
-    ));
-    
-    if (!$coins) continue;
+foreach ($algos as $item) {
+    $norm = $item[0]; $algo = $item[1];
+    $coins_count = getdbocount('db_coins', "enable and visible and auto_ready and algo=:algo", array(':algo' => $algo));
+    if (!$coins_count) continue;
 
     $workers = getdbocount('db_workers', "algo=:algo and not password like '%m=solo%'", array(':algo' => $algo));
     $solo_workers = getdbocount('db_workers',"algo=:algo and password like '%m=solo%'", array(':algo'=>$algo));
     
-    $hashrate = controller()->memcache->get_database_scalar("current_hashrate-$algo", "select hashrate from hashrate where algo=:algo order by time desc limit 1", array(':algo' => $algo));
-    $price = controller()->memcache->get_database_scalar("current_price-$algo", "select price from hashrate where algo=:algo order by time desc limit 1", array(':algo' => $algo));
-    $price = $price ? mbitcoinvaluetoa(take_yaamp_fee($price, $algo)) : '-';
-    $norm = mbitcoinvaluetoa($norm);
-    
     $t = time() - 24 * 60 * 60;
     $total1 = controller()->memcache->get_database_scalar("current_total-$algo", "SELECT SUM(amount*price) AS total FROM blocks WHERE time>$t AND algo=:algo AND NOT category IN ('orphan','stake','generated')", array(':algo' => $algo));
     $hashrate1 = controller()->memcache->get_database_scalar("current_hashrate1-$algo", "select avg(hashrate) from hashrate where time>$t and algo=:algo", array(':algo' => $algo));
-    
     $algo_unit_factor = yaamp_algo_mBTC_factor($algo);
     $btcmhday1 = $hashrate1 != 0 ? mbitcoinvaluetoa($total1 / $hashrate1 * 1000000 * 1000 * $algo_unit_factor) : '0.000';
     
-    $fees = yaamp_fee($algo);
-    $fees_solo = yaamp_fee_solo($algo);
-    $port = getAlgoPort($algo);
+    $fees = yaamp_fee($algo); $fees_solo = yaamp_fee_solo($algo); $port = getAlgoPort($algo);
+    $rowClass = ($defaultalgo == $algo) ? 'table-primary bg-opacity-10' : '';
+    
+    echo '<tr class="'.$rowClass.'" style="cursor: pointer;" onclick="javascript:select_algo(\''.$algo.'\')">';
+    echo '<td class="ps-4 fw-bold fs-6 text-primary"><i class="fa fa-caret-right me-2 opacity-50"></i>'.strtoupper($algo).'</td>';
+    echo '<td colspan="8"></td>';
+    $bestBadge = ($algo == $best_algo) ? '<span class="badge bg-success shadow-sm ms-2" style="font-size: 0.6rem;">BEST PROFIT</span>' : '';
+    echo '<td class="text-end pe-4 fw-bold text-dark">'.$btcmhday1.' '.$bestBadge.'</td>';
+    echo '</tr>';
 
-    $rowClass = ($defaultalgo == $algo) ? 'table-primary' : '';
-    
-    echo "<tr class='$rowClass' style='cursor: pointer;' onclick='javascript:select_algo(\"$algo\")'>";
-    echo "<td class='ps-3 fw-bold'>$algo</td>";
-    echo "<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>";
-    
-    $bestBadge = ($algo == $best_algo) ? '<span class="badge bg-success ms-1">Best</span>' : '';
-    echo "<td class='text-end pe-3 fw-bold' data='$btcmhday1'>$btcmhday1 $bestBadge</td>";
-    echo "</tr>";
+    // Fetch local screen list once for fallback
+    $screen_list = (string) shell_exec("sudo -u yiimpadmin /usr/bin/screen -list");
+    $t = time() - 120; // 2 minute threshold for DB status
 
     $list = getdbolist('db_coins', "enable and visible and auto_ready and algo=:algo order by index_avg desc", array(':algo' => $algo));
-
-    foreach ($list as $coin)
-    {
-        $name = substr($coin->name, 0, 20);
+    foreach ($list as $coin) {
         $symbol = $coin->getOfficialSymbol();
-        
-        echo "<tr>";
-        echo "<td class='ps-4 small'><img width='16' src='" . $coin->image . "' class='me-2'><b>$name</b> <span class='text-muted'>($symbol)</span></td>";
-        
-        $port_db = getdbosql('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
-        $port_count = $port_db ? 1 : 0;
 
-        echo "<td class='text-center'>";
-        echo ($coin->auto_exchange == 1) ? '<i class="fa fa-check-circle text-success"></i>' : '<i class="fa fa-times-circle text-danger"></i>';
-        echo "</td>";
-        
+        // Check Database first (Supports Remote Servers)
+        $stratum_db = getdbosql('db_stratums', "algo=:algo and (symbol=:symbol OR symbol='NULL') AND time > $t", array(':algo' => $algo, ':symbol' => $coin->symbol));
+        $is_online = (bool) $stratum_db;
+
+        // Local Screen Check as Fallback
+        if (!$is_online) {
+            if ($screen_list && preg_match("/\.(stratum-)?".preg_quote($algo, "/")."[[:space:]]/i", $screen_list)) {
+                $is_online = true;
+            }
+        }
+
+        $port_val = $stratum_db ? $stratum_db->port : $port;
+        $status_color = $is_online ? 'text-success' : 'text-danger';
+        $status_icon = $is_online ? 'fa-check-circle' : 'fa-times-circle';
+
         $min_payout = max(floatval(YAAMP_PAYMENTS_MINI), floatval($coin->payout_min));
-        echo "<td class='text-center small fw-bold'>$min_payout $symbol</td>";
 
-        $displayPort = $port_db ? $port_db->port : $port;
-        echo "<td class='text-center small fw-bold text-primary'>$displayPort</td>";
-        
+        echo '<tr class="small border-start border-4" style="border-left-color: '.getAlgoColors($algo).' !important;">';
+        echo '<td class="ps-5"><div class="d-flex align-items-center"><img width="18" src="'.$coin->image.'" class="me-2 rounded-circle shadow-sm"><b>'.$coin->name.'</b> <span class="text-muted ms-1">('.$symbol.')</span></div></td>';
+        echo '<td class="text-center">'.($coin->auto_exchange ? '<i class="fa fa-check-circle text-success fs-6"></i>' : '<i class="fa fa-times-circle text-danger fs-6"></i>').'</td>';
+        echo '<td class="text-center fw-bold">'.$min_payout.' <small class="text-muted">'.$symbol.'</small></td>';
+        echo '<td class="text-center fw-bold '.$status_color.'"><i class="fa '.$status_icon.' me-1"></i>'.$port_val.'</td>';
         $users_total = getdbocount('db_accounts', "id IN (SELECT DISTINCT userid FROM workers)");
-        echo "<td class='text-center small'>$users_total</td>";
+        echo '<td class="text-center">'.$users_total.'</td>';
         
         $workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => ($port_db ? $port_db->pid : 0)));
         $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => ($port_db ? $port_db->pid : 0)));
-        echo "<td class='text-center small text-muted'>$workers_coins / $solo_workers_coins</td>";
+        echo '<td class="text-center text-muted">'.$workers_coins.' / '.$solo_workers_coins.'</td>';
         
-        $pool_hash = yaamp_coin_rate($coin->id);
-        $pool_hash_sfx = $pool_hash ? Itoa2($pool_hash) : '0';
-        $pool_shared_hash = yaamp_coin_shared_rate($coin->id);
-        $pool_shared_hash_sfx = $pool_shared_hash ? Itoa2($pool_shared_hash) : '0';
-        $pool_solo_hash = yaamp_coin_solo_rate($coin->id);
-        $pool_solo_hash_sfx = $pool_solo_hash ? Itoa2($pool_solo_hash) : '0';
-        echo "<td class='text-center small fw-bold text-nowrap'>$pool_shared_hash_sfx / $pool_solo_hash_sfx / $pool_hash_sfx</td>";
+        $pool_hash = Itoa2(yaamp_coin_rate($coin->id));
+        $pool_shared_hash = Itoa2(yaamp_coin_shared_rate($coin->id));
+        $pool_solo_hash = Itoa2(yaamp_coin_solo_rate($coin->id));
+        echo '<td class="text-center fw-bold text-nowrap">'.$pool_shared_hash.' / '.$pool_solo_hash.' / '.$pool_hash.'</td>';
         
         $network_hash = yaamp_coin_nethash($coin);
-        $network_hash_sfx = $network_hash ? Itoa2($network_hash) : '-';
-        echo "<td class='text-center small text-muted'>$network_hash_sfx</td>";
-        echo "<td class='text-center small'>{$fees}% / {$fees_solo}%</td>";
-        
-        $btcmhd = mbitcoinvaluetoa(yaamp_profitability($coin));
-        echo "<td class='text-end pe-3 small text-muted'>$btcmhd</td>";
-        echo "</tr>";
+        echo '<td class="text-center text-muted">'.($network_hash ? Itoa2($network_hash) : '-').'</td>';
+        echo '<td class="text-center">'.$fees.'% / '.$fees_solo.'%</td>';
+        echo '<td class="text-end pe-4 text-muted">'.mbitcoinvaluetoa(yaamp_profitability($coin)).'</td>';
+        echo '</tr>';
     }
-
-    $total_coins += $coins;
-    $total_workers += $workers;
-    $total_solo_workers += $solo_workers;
+    $total_coins += $coins_count; $total_workers += $workers; $total_solo_workers += $solo_workers;
 }
 
-// Final row with totals
+echo '        </tbody>';
 $total_users = getdbocount('db_accounts', "id IN (SELECT DISTINCT userid FROM workers)");
-echo "</tbody>";
-echo "<tfoot class='table-light fw-bold'>";
-echo "<tr>";
-echo "<td class='ps-3'>Totals</td>";
-echo "<td></td>";
-echo "<td class='text-center small'>$total_coins Coins</td>";
-echo "<td></td>";
-echo "<td class='text-center small'>$total_users Users</td>";
-echo "<td class='text-center small text-muted'>$total_workers / $total_solo_workers</td>";
-echo "<td></td><td></td><td></td><td></td>";
-echo "</tr>";
-echo "</tfoot>";
-
-echo "</table>";
-echo "</div>"; // card-body
-echo '<div class="card-footer bg-light py-2 small text-muted">';
-echo '* values in mBTC/MH/day (or GH/day for sha/blake algos)';
+echo '        <tfoot class="table-dark small text-uppercase fw-bold">';
+echo '          <tr><td class="ps-4">Infrastructure Totals</td><td></td>';
+echo '            <td class="text-center">'.$total_coins.' Assets</td><td></td>';
+echo '            <td class="text-center">'.$total_users.' Miners</td>';
+echo '            <td class="text-center">'.$total_workers.' / '.$total_solo_workers.'</td>';
+echo '            <td colspan="4"></td></tr>';
+echo '        </tfoot>';
+echo '      </table></div></div>';
+echo '  <div class="card-footer bg-light py-2 small text-muted"><i class="fa fa-info-circle me-1"></i> * Profitability values are estimated in mBTC/MH/day (or GH/day for SHA/Blake algos).</div>';
 echo '</div>';
-echo "</div>"; // card
-
-showTableSorter('maintable1', "{
-    tableClass: 'table table-hover table-sm mb-0',
-    textExtraction: {
-        4: function(node, table, n) { return $(node).attr('data'); },
-        8: function(node, table, n) { return $(node).attr('data'); }
-    }
-}");
 ?>

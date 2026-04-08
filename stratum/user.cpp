@@ -97,6 +97,7 @@ void db_add_user(YAAMP_DB *db, YAAMP_CLIENT *client)
 	bool guest = false;
 	int gift = -1;
 	client->solo = false;
+	memset(client->rent_address, 0, 128);
 
 	std::string symbol;
 	std::vector<std::string> commandlist;
@@ -115,6 +116,10 @@ void db_add_user(YAAMP_DB *db, YAAMP_CLIENT *client)
 			}
 			else if (command.at(0) == "s") {
 				symbol = command.at(1);
+			}
+			else if (command.at(0) == "r" || command.at(0) == "rent") {
+				strncpy(client->rent_address, command.at(1).c_str(), 127);
+				db_check_user_input(client->rent_address);
 			}
 			else if (command.at(0) == "m" || command.at(0) == "w") {
 				if (command.at(1) == "solo") client->solo = true;
@@ -196,16 +201,16 @@ void db_add_user(YAAMP_DB *db, YAAMP_CLIENT *client)
 
 	else if(client->userid == 0 && strlen(client->username) >= MIN_ADDRESS_LEN)
 	{
-		db_query(db, "INSERT INTO accounts (username, coinsymbol, balance, donation, hostaddr) values ('%s', '%s', 0, %d, '%s')",
-			client->username, symbol.substr(0,15).c_str(), gift, client->sock->ip);
+		db_query(db, "INSERT INTO accounts (username, coinsymbol, balance, donation, hostaddr, rent_address) values ('%s', '%s', 0, %d, '%s', '%s')",
+			client->username, symbol.substr(0,15).c_str(), gift, client->sock->ip, client->rent_address);
 		client->userid = (int)mysql_insert_id(&db->mysql);
 	}
 
 	else {
-		db_query(db, "UPDATE accounts SET coinsymbol='%s', swap_time=%u, donation=%d, hostaddr='%s' WHERE id=%d AND balance = 0"
+		db_query(db, "UPDATE accounts SET coinsymbol='%s', swap_time=%u, donation=%d, hostaddr='%s', rent_address='%s' WHERE id=%d AND balance = 0"
 			" AND (SELECT COUNT(id) FROM payouts WHERE account_id=%d AND tx IS NULL) = 0" // failed balance
 			" AND (SELECT pending FROM balanceuser WHERE userid=%d ORDER by time DESC LIMIT 1) = 0" // pending balance
-			, symbol.substr(0,15).c_str(), (uint) time(NULL), gift, client->sock->ip, client->userid, client->userid, client->userid);
+			, symbol.substr(0,15).c_str(), (uint) time(NULL), gift, client->sock->ip, client->rent_address, client->userid, client->userid, client->userid);
 		if (mysql_affected_rows(&db->mysql) > 0 && (symbol.size() > 0)) {
 			debuglog("%s: %s coinsymbol set to %s ip %s uid (%d)\n",
 				g_current_algo->name, client->username, symbol.substr(0,15).c_str(), client->sock->ip, client->userid);

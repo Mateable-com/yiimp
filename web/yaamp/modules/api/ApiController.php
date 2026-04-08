@@ -529,4 +529,26 @@ class ApiController extends CommonController
         $job->save();
     }
 
+    public function actionRental_deposit_address()
+    {
+        if (!YAAMP_RENTAL)
+            return;
+
+        $key    = getparam('key');
+        $renter = getdbosql('db_renters', "apikey=:apikey", array(
+            ':apikey' => $key
+        ));
+        if (!$renter)
+            return;
+
+        $coin = getdbosql('db_coins', "symbol=:symbol", array(':symbol'=>YAAMP_RENTER_COIN));
+        $coin_symbol = $coin ? $coin->symbol : 'BTC';
+
+        header('Content-Type: application/json');
+        echo "{";
+        echo "\"address\": \"$renter->address\", ";
+        echo "\"symbol\": \"$coin_symbol\"";
+        echo "}";
+    }
+
 }

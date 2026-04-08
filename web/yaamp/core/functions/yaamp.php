@@ -172,7 +172,7 @@ function yaamp_fee($algo)
 	$fee = controller()->memcache->get("yaamp_fee-$algo");
 	if($fee && is_numeric($fee)) return (float) $fee;
 
-	$fee = YAAMP_FEES_MINING;
+	$fee = (float) settings_get('fees_mining', YAAMP_FEES_MINING);
 
 	// local fees config
 	global $configFixedPoolFees;
@@ -189,7 +189,7 @@ function yaamp_fee_solo($algo)
 	$fee_solo = controller()->memcache->get("yaamp_fee_solo-$algo");
 	if($fee_solo && is_numeric($fee_solo)) return (float) $fee_solo;
 
-	$fee_solo = YAAMP_FEES_SOLO;
+	$fee_solo = (float) settings_get('fees_solo', YAAMP_FEES_SOLO);
 
 	// local solo fees config
 	global $configFixedPoolFeesSolo;
@@ -339,7 +339,7 @@ function yaamp_convert_amount_user($coin, $amount, $user)
 		$value = $amount;
 	} else {
 		if (YAAMP_ALLOW_EXCHANGE) {
-			if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
+			if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol=:symbol", array(':symbol'=>YAAMP_RENTER_COIN));
 			if(!$refcoin || $refcoin->price <= 0) return 0;
 			$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
 		} else if ($coin->price && $refcoin && $refcoin->price > 0.) {
@@ -357,7 +357,7 @@ function yaamp_convert_earnings_user($user, $status)
 	if ($refcoin && !$refcoin->auto_exchange) {
 		$value = dboscalar("SELECT sum(amount) FROM earnings WHERE $status AND userid={$user->id} and coinid={$user->coinid}");
 	} else if (YAAMP_ALLOW_EXCHANGE) {
-		if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
+		if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol=:symbol", array(':symbol'=>YAAMP_RENTER_COIN));
 		if(!$refcoin || $refcoin->price <= 0) return 0;
 		$value = dboscalar("SELECT sum(amount*price) FROM earnings WHERE $status AND userid={$user->id}");
 		$value = $value / $refcoin->price;

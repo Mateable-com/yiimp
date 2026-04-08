@@ -15,14 +15,16 @@ JavascriptFile("/yaamp/ui/js/jquery.tablesorter.widgets.js");
         <div class="col-12">
             <div class="card shadow-sm border-0 bg-dark text-white">
                 <div class="card-body py-3 d-flex flex-wrap align-items-center">
-                    <h4 class="mb-0 me-auto"><i class="fa fa-tachometer-alt me-2 text-primary"></i>Admin Dashboard</h4>
-                    <div class="btn-group shadow-sm">
-                        <a href='/admin/coincreate' class="btn btn-sm btn-success"><i class="fa fa-plus-circle me-1"></i>Create Coin</a>
-                        <a href='/admin/updateprice' class="btn btn-sm btn-info text-white"><i class="fa fa-sync-alt me-1"></i>Update Prices</a>
-                        <a href='/admin/memcached' class="btn btn-sm btn-secondary"><i class="fa fa-memory me-1"></i>Memcache</a>
-                        <a href='/admin/connections' class="btn btn-sm btn-secondary"><i class="fa fa-network-wired me-1"></i>Connections</a>
+                    <h4 class="mb-0 me-auto fw-bold"><i class="fa fa-tachometer-alt me-2 text-primary"></i>Admin Dashboard</h4>
+                    <div class="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden">
+                        <a href='/admin/coincreate' class="btn btn-success px-3 fw-bold"><i class="fa fa-plus-circle me-1"></i>New Coin</a>
+                        <a href='/admin/updateprice' class="btn btn-info text-white px-3 fw-bold"><i class="fa fa-sync-alt me-1"></i>Update Prices</a>
+                        <a href='/admin/monsters' class="btn btn-danger px-3 fw-bold"><i class="fa fa-ghost me-1"></i>Monsters</a>
+                        <a href='/admin/botnets' class="btn btn-dark px-3 fw-bold"><i class="fa fa-spider me-1"></i>Botnets</a>
+                        <a href='/admin/memcached' class="btn btn-secondary px-3 fw-bold"><i class="fa fa-memory me-1"></i>Memcache</a>
+                        <a href='/admin/connections' class="btn btn-secondary px-3 fw-bold"><i class="fa fa-network-wired me-1"></i>Conns</a>
                         <?php if (YAAMP_RENTAL) : ?>
-                        <a href='/renting/admin' class="btn btn-sm btn-warning"><i class="fa fa-server me-1"></i>Rental</a>
+                        <a href='/renting/admin' class="btn btn-warning px-3 fw-bold"><i class="fa fa-server me-1"></i>Rental</a>
                         <?php endif; ?>
                     </div>
                 </div>

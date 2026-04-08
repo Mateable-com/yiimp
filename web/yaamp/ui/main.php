@@ -28,7 +28,7 @@ echo <<<END
 
 END;
 
-$pageTitle = empty($this->pageTitle) ? YAAMP_SITE_NAME : YAAMP_SITE_NAME." - ".$this->pageTitle;
+$pageTitle = empty($this->pageTitle) ? settings_get('site_name', YAAMP_SITE_NAME) : settings_get('site_name', YAAMP_SITE_NAME)." - ".$this->pageTitle;
 
 echo '<title>'.$pageTitle.'</title>';
 
@@ -94,7 +94,7 @@ function showPageHeader()
 
     echo '<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">';
     echo '  <div class="container-fluid">';
-    echo '    <a class="navbar-brand fw-bold text-primary" href="/">' . YAAMP_SITE_NAME . '</a>';
+    echo '    <a class="navbar-brand fw-bold text-primary" href="/">' . settings_get('site_name', YAAMP_SITE_NAME) . '</a>';
     echo '    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">';
     echo '      <span class="navbar-toggler-icon"></span>';
     echo '    </button>';
@@ -104,6 +104,7 @@ function showPageHeader()
     $items = [
         ['url' => '/', 'name' => 'Home', 'active' => (controller()->id == 'site' && $action == 'index' && !$ad)],
         ['url' => '/site/mining', 'name' => 'Pool', 'active' => ($action == 'mining')],
+        ['url' => '/site/coins', 'name' => 'Coins', 'active' => ($action == 'coins')],
         ['url' => "/?address=$wallet", 'name' => 'Wallet', 'active' => (controller()->id == 'site' && ($action == 'index' || $action == 'wallet') && $ad)],
         ['url' => '/stats', 'name' => 'Graphs', 'active' => (controller()->id == 'stats')],
         ['url' => '/site/miners', 'name' => 'Miners', 'active' => ($action == 'miners')],
@@ -121,23 +122,27 @@ function showPageHeader()
         echo '</li>';
     }
 
-    if (YIIMP_ADMIN_LOGIN && controller()->admin) {
-        if (isAdminIP($_SERVER['REMOTE_ADDR']) === false) {
-            debuglog("admin {$_SERVER['REMOTE_ADDR']}");
-        }
+    if (controller()->admin && user()->getState('yaamp_admin')) {
         echo '<li class="nav-item dropdown ms-lg-3">';
-        echo '  <a class="nav-link dropdown-toggle text-warning border border-warning rounded px-3" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">';
-        echo '    <i class="fa fa-cog me-1"></i> Admin';
+        echo '  <a class="nav-link dropdown-toggle text-primary fw-bold border border-primary rounded px-3" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+        echo '    <i class="fa fa-user-shield me-1"></i> Admin Panel';
         echo '  </a>';
-        echo '  <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="adminDropdown">';
-        echo '    <li><a class="dropdown-item" href="/coin"><i class="fa fa-coins me-2"></i>Coins</a></li>';
-        echo '    <li><a class="dropdown-item" href="/admin/dashboard"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a></li>';
-        echo '    <li><a class="dropdown-item" href="/admin/coinwallets"><i class="fa fa-wallet me-2"></i>Wallets</a></li>';
-        if (YAAMP_RENTAL) echo '    <li><a class="dropdown-item" href="/renting/admin"><i class="fa fa-tasks me-2"></i>Jobs</a></li>';
-        if (YAAMP_ALLOW_EXCHANGE) echo '    <li><a class="dropdown-item" href="/trading"><i class="fa fa-exchange-alt me-2"></i>Trading</a></li>';
-        if (YAAMP_USE_NICEHASH_API) echo '    <li><a class="dropdown-item" href="/nicehash"><i class="fa fa-microchip me-2 text-info"></i>Nicehash</a></li>';
-        echo '    <li><hr class="dropdown-divider"></li>';
-        echo '    <li><a class="dropdown-item text-danger" href="/admin/logout"><i class="fa fa-sign-out-alt me-2"></i>Logout</a></li>';
+        echo '  <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-2" aria-labelledby="adminDropdown" style="min-width: 220px; border-radius: 12px;">';
+        echo '    <li><h6 class="dropdown-header text-uppercase small fw-bold text-muted">Management</h6></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin"><i class="fa fa-tachometer-alt me-2 text-primary opacity-75" style="width:20px"></i>Dashboard</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/coinWallets"><i class="fa fa-coins me-2 text-success opacity-75" style="width:20px"></i>Manage Coins</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/user"><i class="fa fa-users me-2 text-info opacity-75" style="width:20px"></i>User Manager</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/payments"><i class="fa fa-money-bill-wave me-2 text-success opacity-75" style="width:20px"></i>Payments</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/earning"><i class="fa fa-hand-holding-usd me-2 text-primary opacity-75" style="width:20px"></i>Earnings</a></li>';
+        echo '    <li><hr class="dropdown-divider mx-2"></li>';
+        echo '    <li><h6 class="dropdown-header text-uppercase small fw-bold text-muted">Infrastructure</h6></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/exchange"><i class="fa fa-exchange-alt me-2 text-warning opacity-75" style="width:20px"></i>Exchanges</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/monsters"><i class="fa fa-ghost me-2 text-danger opacity-75" style="width:20px"></i>Big Miners</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/botnets"><i class="fa fa-spider me-2 text-dark opacity-75" style="width:20px"></i>Botnets</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/connections"><i class="fa fa-plug me-2 text-info opacity-75" style="width:20px"></i>Connections</a></li>';
+        echo '    <li><a class="dropdown-item py-2" href="/admin/memcached"><i class="fa fa-memory me-2 text-secondary opacity-75" style="width:20px"></i>Memcached</a></li>';
+        echo '    <li><hr class="dropdown-divider mx-2"></li>';
+        echo '    <li><a class="dropdown-item text-danger fw-bold py-2" href="/admin/logout"><i class="fa fa-sign-out-alt me-2"></i>Logout</a></li>';
         echo '  </ul>';
         echo '</li>';
     }
@@ -161,19 +166,79 @@ function showPageHeader()
 function showPageFooter()
 {
 	$year = date("Y", time());
-	echo '<footer class="footer mt-auto py-4 bg-dark text-white border-top border-secondary border-opacity-25">';
-    echo '  <div class="container text-center">';
-    echo '    <div class="row">';
-    echo '      <div class="col-md-6 text-md-start mb-3 mb-md-0">';
-    echo "        <span class='text-muted small'>&copy; $year " . YAAMP_SITE_NAME . " - </span>";
-    echo '        <a href="https://github.com/Kudaraidee/yiimp" class="text-info text-decoration-none small"><i class="fab fa-github me-1"></i>Open source Project</a>';
+	echo '<footer class="footer mt-auto py-5 bg-dark text-white border-top border-secondary border-opacity-25">';
+    echo '  <div class="container">';
+    echo '    <div class="row g-4">';
+    
+    // Column 1: Brand & About
+    echo '      <div class="col-lg-4">';
+    echo '        <h5 class="fw-bold mb-3 text-primary"><i class="fa fa-microchip me-2"></i>' . settings_get('site_name', YAAMP_SITE_NAME) . '</h5>';
+    echo '        <p class="text-muted small pe-lg-5">A high-performance mining pool infrastructure designed for stability, security, and maximum profitability. Built for the future of crypto.</p>';
+    echo '        <div class="d-flex gap-3 mt-4">';
+    $tw = settings_get('link_twitter');
+    if($tw) echo '          <a href="'.$tw.'" class="text-muted" target="_blank"><i class="fab fa-twitter fs-5"></i></a>';
+    $ds = settings_get('link_discord');
+    if($ds) echo '          <a href="'.$ds.'" class="text-muted" target="_blank"><i class="fab fa-discord fs-5"></i></a>';
+    $gh = settings_get('link_github', 'https://github.com/Kudaraidee/yiimp');
+    if($gh) echo '          <a href="'.$gh.'" class="text-muted" target="_blank"><i class="fab fa-github fs-5"></i></a>';
+    echo '        </div>';
     echo '      </div>';
-    echo '      <div class="col-md-6 text-md-end">';
-    echo '        <span class="text-muted small">Powered by <a href="/" class="text-primary text-decoration-none fw-bold">' . YAAMP_SITE_NAME . '</a></span>';
+
+    // Column 2: Quick Links
+    echo '      <div class="col-6 col-lg-2">';
+    echo '        <h6 class="text-uppercase fw-bold mb-3 small" style="letter-spacing: 1px;">Mining</h6>';
+    echo '        <ul class="list-unstyled small">';
+    echo '          <li class="mb-2"><a href="/site/mining" class="text-muted text-decoration-none hover-white">Active Pools</a></li>';
+    echo '          <li class="mb-2"><a href="/site/coins" class="text-muted text-decoration-none hover-white">Supported Coins</a></li>';
+    echo '          <li class="mb-2"><a href="/stats" class="text-muted text-decoration-none hover-white">Network Stats</a></li>';
+    echo '          <li class="mb-2"><a href="/bench" class="text-muted text-decoration-none hover-white">Benchmarks</a></li>';
+    echo '          <li class="mb-2"><a href="/explorer" class="text-muted text-decoration-none hover-white">Explorers</a></li>';
+    echo '        </ul>';
+    echo '      </div>';
+
+    // Column 3: Support
+    echo '      <div class="col-6 col-lg-2">';
+    echo '        <h6 class="text-uppercase fw-bold mb-3 small" style="letter-spacing: 1px;">Support</h6>';
+    echo '        <ul class="list-unstyled small">';
+    echo '          <li class="mb-2"><a href="/site/about" class="text-muted text-decoration-none hover-white">About Us</a></li>';
+    echo '          <li class="mb-2"><a href="/site/terms" class="text-muted text-decoration-none hover-white">Terms of Service</a></li>';
+    echo '          <li class="mb-2"><a href="https://bitcointalk.org" target="_blank" class="text-muted text-decoration-none hover-white">BitcoinTalk</a></li>';
+    echo '          <li class="mb-2"><a href="mailto:' . YAAMP_ADMIN_EMAIL . '" class="text-muted text-decoration-none hover-white">Contact Admin</a></li>';
+    echo '        </ul>';
+    echo '      </div>';
+
+    // Column 4: Next Payout (Mobile Friendly)
+    $mining = getdbosql('db_mining');
+    $nextpayment = date('H:i T', $mining->last_payout + YAAMP_PAYMENTS_FREQ);
+    echo '      <div class="col-lg-4 text-lg-end">';
+    echo '        <div class="bg-secondary bg-opacity-10 p-4 rounded-3 d-inline-block text-start w-100">';
+    echo '          <h6 class="text-uppercase fw-bold mb-2 small text-info"><i class="fa fa-clock me-2"></i>Automated Payouts</h6>';
+    echo '          <p class="mb-0 small text-muted">The next payment cycle is scheduled for <span class="text-white fw-bold">'.$nextpayment.'</span>. Ensure your balance meets the minimum threshold.</p>';
+    echo '        </div>';
+    echo '      </div>';
+
+    echo '    </div>'; // close row
+
+    echo '    <hr class="my-5 border-secondary border-opacity-25">';
+    
+    echo '    <div class="row align-items-center">';
+    echo '      <div class="col-md-6 text-center text-md-start">';
+    echo '        <span class="text-muted small">&copy; ' . $year . ' <b class="text-white">' . settings_get('site_name', YAAMP_SITE_NAME) . '</b>. All rights reserved.</span>';
+    echo '      </div>';
+    echo '      <div class="col-md-6 text-center text-md-end mt-3 mt-md-0">';
+    echo '        <span class="text-muted small">Modernized by <a href="/" class="text-primary text-decoration-none fw-bold">YiiMP 2026 Engine</a></span>';
     echo '      </div>';
     echo '    </div>';
+
     echo '  </div>';
 	echo '</footer>';
+    
+    echo '<style>
+        .hover-white:hover { color: #fff !important; }
+        footer a { transition: color 0.2s ease; }
+        footer .text-muted { color: #adb5bd !important; }
+        footer h5, footer h6 { color: #ffffff !important; }
+    </style>';
 }
 
 

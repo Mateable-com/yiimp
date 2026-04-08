@@ -54,7 +54,10 @@ if (!defined('YAAMP_NOTIFY_NEW_COINS')) define('YAAMP_NOTIFY_NEW_COINS', false);
 
 if (!defined('YAAMP_LIMIT_ESTIMATE')) define('YAAMP_LIMIT_ESTIMATE', false);
 if (!defined('YAAMP_RENTAL')) define('YAAMP_RENTAL', false);
+if (!defined('YAAMP_RENTER_COIN')) define('YAAMP_RENTER_COIN', 'BTC');
 if (!defined('YAAMP_USE_NICEHASH_API')) define('YAAMP_USE_NICEHASH_API', false);
+
+if (!defined('YIIMP_STRATUM_CTRL_DIR')) define('YIIMP_STRATUM_CTRL_DIR', '/home/crypto-data/yiimp/site/stratum');
 
 if (!defined('NICEHASH_API_KEY')) define('NICEHASH_API_KEY','');
 if (!defined('NICEHASH_API_ID')) define('NICEHASH_API_ID','0000');

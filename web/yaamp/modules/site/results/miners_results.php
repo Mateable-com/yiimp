@@ -24,25 +24,27 @@ $total_invalid = !$this->admin ? 0 : controller()->memcache->get_database_scalar
 	"SELECT hashrate_bad FROM hashrate WHERE algo=:algo ORDER BY time DESC LIMIT 1", array(':algo'=>$algo)
 );
 
-WriteBoxHeader("Miners Version ($algo)");
-
-//showTableSorter('maintable2');
-echo <<<end
-<br/>
-<table id="maintable2" class="dataGrid2">
-<thead>
-<tr>
-<th>Version</th>
-<th align="right">Count</th>
-<th align="right">Donators</th>
-<th align="right" title="* Extranonce Subscribe">ES</th>
-<th align="right">Percent</th>
-<th align="right">Hashrate*</th>
-<th align="right" title="Rate per miner">Avg</th>
-<th align="right" class="rejects" style="display:none;">Reject</th>
-</tr>
-</thead><tbody>
-end;
+echo '<div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">';
+echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-microchip me-2 text-primary"></i>Miners Version: <span class="text-primary small text-uppercase">'.$algo.'</span></h5>';
+echo '    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">Live Fleet</span>';
+echo '  </div>';
+echo '  <div class="card-body p-0">';
+echo '    <div class="table-responsive">';
+echo '      <table class="table table-hover align-middle mb-0 small" id="maintable2">';
+echo '        <thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">';
+echo '          <tr>';
+echo '            <th class="ps-4">Version</th>';
+echo '            <th class="text-center">Count</th>';
+echo '            <th class="text-center">Donators</th>';
+echo '            <th class="text-center" title="Extranonce Subscribe">ES</th>';
+echo '            <th class="text-center">Share %</th>';
+echo '            <th class="text-end">Hashrate*</th>';
+echo '            <th class="text-end">Avg. Rate</th>';
+echo '            <th class="text-end pe-4 rejects" style="display:none;">Reject</th>';
+echo '          </tr>';
+echo '        </thead>';
+echo '        <tbody>';
 
 $error_tab = array(
 	20=>'Invalid nonce size',
@@ -109,59 +111,39 @@ foreach($versions as $item)
 	$hashrate = $hashrate? Itoa2($hashrate).'H/s': '';
 	$version = substr($version, 0, 30);
 
-	echo '<tr class="ssrow">';
-	echo '<td><b>'.$version.'</b></td>';
-	echo '<td align="right">'.$count.'</td>';
-	echo '<td align="right">'.($donators ? $donators : '-').'</td>';
-	echo '<td align="right">'.($extranonce ? $extranonce : '-').'</td>';
-	if (floatval($percent) > 50)
-		echo '<td align="right"><b>'.$percent.'</b></td>';
-	else
-		echo '<td align="right">'.$percent.'</td>';
-	echo '<td align="right">'.$hashrate.'</td>';
-	echo '<td align="right">'.$avg.'</td>';
-	echo '<td align="right" class="rejects" style="display:none;" title="'.$title.'">'.$bad.'</td>';
+	echo '<tr>';
+	echo '  <td class="ps-4 fw-bold">'.$version.'</td>';
+	echo '  <td class="text-center">'.$count.'</td>';
+	echo '  <td class="text-center">'.($donators ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">'.$donators.'</span>' : '-').'</td>';
+	echo '  <td class="text-center">'.($extranonce ? '<i class="fa fa-check text-primary"></i>' : '-').'</td>';
+	echo '  <td class="text-center">'.($percent != '-' ? '<div class="progress" style="height: 6px;"><div class="progress-bar bg-primary" role="progressbar" style="width: '.$percent.'"></div></div><small class="text-muted mt-1 d-block">'.$percent.'</small>' : '-').'</td>';
+	echo '  <td class="text-end fw-bold">'.$hashrate.'</td>';
+	echo '  <td class="text-end text-muted">'.$avg.'</td>';
+	echo '  <td class="text-end pe-4 rejects text-danger fw-bold" style="display:none;" title="'.$title.'">'.$bad.'</td>';
 	echo '</tr>';
 }
 
-echo "</tbody>";
-
-$title = '';
-foreach($error_tab as $i=>$s)
-{
-	$invalid2 = !$total_invalid ? 0 : controller()->memcache->get_database_scalar("miners-invalid-$algo-err$i",
-		"SELECT SUM(difficulty) * $target / $interval / 1000 FROM shares WHERE time>$delay AND algo=:algo AND error=$i ".
-		"AND workerid IN (SELECT id FROM workers WHERE algo=:algo)", array(':algo'=>$algo)
-	);
-
-	if($invalid2) {
-		$bad2 = round($invalid2*100/($total_hashrate+$invalid2), 2);
-		$title .= "$bad2 - $s\n";
-	}
-}
+echo '        </tbody>';
 
 $bad = ($total_hashrate+$total_invalid) && $total_invalid ? round($total_invalid*100/($total_hashrate+$total_invalid), 1).'%': '';
 $avg = intval($total_workers) ? Itoa2($total_hashrate / intval($total_workers)).'H/s' : '';
-$total_hashrate = Itoa2($total_hashrate).'H/s';
+$total_hashrate_sfx = Itoa2($total_hashrate).'H/s';
 
-echo '<tr class="ssrow">';
-echo '<th><b>Total</b></th>';
-echo '<th align="right">'.$total_workers.'</th>';
-echo '<th align="right">'.$total_donators.'</th>';
-echo '<th align="right">'.$total_extranonce.'</th>';
-echo '<th align="right"></th>';
-echo '<th align="right">'.$total_hashrate.'</th>';
-echo '<th align="right">'.$avg.'</th>';
-echo '<th align="right" title="'.$title.'" class="rejects" style="display:none;">'.$bad.'</th>';
-echo '</tr>';
-
-echo "</table>";
-
-echo "<p style='font-size: .8em'>
-		&nbsp;* approximate from the last 5 minutes submitted shares<br>
-		</p>";
-
-echo "<br></div></div><br>";
+echo '        <tfoot class="table-dark small text-uppercase fw-bold">';
+echo '          <tr>';
+echo '            <td class="ps-4">Infrastructure Totals</td>';
+echo '            <td class="text-center">'.$total_workers.'</td>';
+echo '            <td class="text-center">'.$total_donators.'</td>';
+echo '            <td class="text-center">'.$total_extranonce.'</td>';
+echo '            <td></td>';
+echo '            <td class="text-end text-warning">'.$total_hashrate_sfx.'</td>';
+echo '            <td class="text-end">'.$avg.'</td>';
+echo '            <td class="text-end pe-4 rejects text-danger" style="display:none;">'.$bad.'</td>';
+echo '          </tr>';
+echo '        </tfoot>';
+echo '      </table></div></div>';
+echo '  <div class="card-footer bg-light py-2 small text-muted">* approximate from the last 5 minutes submitted shares</div>';
+echo '</div>';
 
 if ($this->admin) {
 	// show reject column

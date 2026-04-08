@@ -918,11 +918,26 @@ class AdminController extends CommonController {
 	public function actionUpdatePrice()
 	{
 		if(!$this->admin) return;
-		BackendPricesUpdate();
+		backend_update_price();
 		$this->goback();
 	}
 
+	public function actionSettings()
+	{
+		if(!$this->admin) $this->redirect("/site/mining");
+		if(isset($_POST['Settings']))
+		{
+			foreach($_POST['Settings'] as $param => $value)
+			{
+				settings_set($param, $value);
+			}
+			user()->setFlash('message', "Pool settings updated successfully.");
+		}
+		$this->render('settings');
+	}
+
 	public function actionUninstallCoin()
+
 	{
 		if(!$this->admin) return;
 
@@ -953,6 +968,57 @@ class AdminController extends CommonController {
 		if(!$this->admin) return;
 
 		BackendOptimizeTables();
+		$this->goback();
+	}
+
+	public function actionStartStratum()
+	{
+		if(!$this->admin) return;
+		$algo = getparam('algo');
+		if($algo) {
+			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $algo start 2>&1";
+			exec($cmd, $output, $result);
+			
+			$logfile = "/tmp/stratum_ctl_$algo.log";
+			$log = file_exists($logfile) ? file_get_contents($logfile) : implode(' ', $output);
+			
+			if($result == 0) user()->setFlash('message', "Stratum for $algo: $log");
+			else user()->setFlash('error', "Failed to start stratum for $algo. Log: $log");
+		}
+		$this->goback();
+	}
+
+	public function actionStopStratum()
+	{
+		if(!$this->admin) return;
+		$algo = getparam('algo');
+		if($algo) {
+			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $algo stop 2>&1";
+			exec($cmd, $output, $result);
+			
+			$logfile = "/tmp/stratum_ctl_$algo.log";
+			$log = file_exists($logfile) ? file_get_contents($logfile) : "Stopped.";
+			
+			user()->setFlash('message', "Stratum for $algo: $log");
+		}
+		$this->goback();
+	}
+
+	public function actionUnlockStratum()
+	{
+		if(!$this->admin) return;
+		$algo = getparam('algo');
+		$port = getparam('port');
+		if($algo && $port) {
+			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $algo unlock $port 2>&1";
+			exec($cmd, $output, $result);
+			
+			$logfile = "/tmp/stratum_ctl_$algo.log";
+			$log = file_exists($logfile) ? file_get_contents($logfile) : implode(' ', $output);
+			
+			if($result == 0) user()->setFlash('message', "Port $port unlocked for $algo: $log");
+			else user()->setFlash('error', "Failed to unlock port $port for $algo. Log: $log");
+		}
 		$this->goback();
 	}
 

@@ -15,63 +15,55 @@ if(!$user || $user->is_locked) return;
 $count = getparam('count');
 $count = $count? $count: 50;
 
-WriteBoxHeader("Last $count Earnings: $user->username");
-$earnings = getdbolist('db_earnings', "userid=$user->id order by create_time desc limit :count", array(':count'=>$count));
-
-echo <<<EOT
-<style type="text/css">
-span.block { padding: 2px; display: inline-block; text-align: center; min-width: 75px; border-radius: 3px; }
-span.block.invalid  { color: white; background-color: #d9534f; }
-span.block.immature { color: white; background-color: #f0ad4e; }
-span.block.exchange { color: white; background-color: #5cb85c; }
-span.block.cleared  { color: white; background-color: gray; }
-</style>
-<table class="dataGrid2">
-<thead>
-<tr>
-<td></td>
-<th>Name</th>
-<th align=right>Block</th>
-<th align=right>Amount</th>
-<th align=right>Percent</th>
-<th align=right>mBTC</th>
-<th align=right>Time</th>
-<th align=right>Status</th>
-</tr>
-</thead>
-EOT;
+echo '<div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">';
+echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-hand-holding-usd me-2 text-success"></i>Last '.$count.' Earnings</h5>';
+echo '    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3">Miner: <small class="font-monospace">'.$user->username.'</small></span>';
+echo '  </div>';
+echo '  <div class="card-body p-0">';
+echo '    <div class="table-responsive">';
+echo '      <table class="table table-hover align-middle mb-0 small" id="user-earnings-table">';
+echo '        <thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">';
+echo '          <tr>';
+echo '            <th class="ps-4" style="width: 40px;"></th>';
+echo '            <th>Asset / Algo</th>';
+echo '            <th class="text-end">Height</th>';
+echo '            <th class="text-end">Amount</th>';
+echo '            <th class="text-end">Percent</th>';
+echo '            <th class="text-end">mBTC</th>';
+echo '            <th class="text-center">Time Ago</th>';
+echo '            <th class="text-end pe-4">Status</th>';
+echo '          </tr>';
+echo '        </thead>';
+echo '        <tbody>';
 
 $showrental = (bool) YAAMP_RENTAL;
+$earnings = getdbolist('db_earnings', "userid=$user->id order by create_time desc limit :count", array(':count'=>$count));
 
 foreach($earnings as $earning)
 {
 	$coin = getdbo('db_coins', $earning->coinid);
 	$block = getdbo('db_blocks', $earning->blockid);
-	if (!$block) {
-		debuglog("missing block id {$earning->blockid}!");
-		continue;
-	}
+	if (!$block) continue;
 
 	$d = datetoa2($earning->create_time);
 	if(!$coin)
 	{
-		if (!$showrental)
-			continue;
-
+		if (!$showrental) continue;
 		$reward = bitcoinvaluetoa($earning->amount);
 		$value = mbitcoinvaluetoa($earning->amount*1000);
 		$percent = $block->amount ? percentvaluetoa($earning->amount * 100/$block->amount) : 0;
 
-		echo '<tr class="ssrow">';
-		echo '<td width="18"><img width="16" src="/images/btc.png"></td>';
-		echo '<td><b>Rental</b><span style="font-size: .8em;"> ('.$block->algo.')</span></td>';
-		echo '<td align="right" style="font-size: .8em;"><b>'.$reward.' BTC</b></td>';
-		echo '<td align="right" style="font-size: .8em;">'.$percent.'%</td>';
-		echo '<td align="right" style="font-size: .8em;">'.$value.'</td>';
-		echo '<td align="right" style="font-size: .8em;">'.$d.'&nbsp;ago</td>';
-		echo '<td align="right" style="font-size: .8em;"><span class="block cleared">Cleared</span></td>';
+		echo '<tr>';
+		echo '  <td class="ps-4 text-center"><img width="18" src="/images/btc.png" class="rounded-circle shadow-sm"></td>';
+		echo '  <td><span class="fw-bold text-primary">Rental Power</span> <small class="text-muted text-uppercase">('.$block->algo.')</small></td>';
+		echo '  <td class="text-end">-</td>';
+		echo '  <td class="text-end fw-bold text-primary">'.$reward.' BTC</td>';
+		echo '  <td class="text-end small">'.$percent.'%</td>';
+		echo '  <td class="text-end small">'.$value.'</td>';
+		echo '  <td class="text-center small text-muted">'.$d.' ago</td>';
+		echo '  <td class="text-end pe-4"><span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 w-100">CLEARED</span></td>';
 		echo '</tr>';
-
 		continue;
 	}
 
@@ -79,17 +71,17 @@ foreach($earnings as $earning)
 	$reward = altcoinvaluetoa($earning->amount);
 	$percent = $block->amount ? percentvaluetoa($earning->amount * 100/$block->amount) : 0;
 	$value = mbitcoinvaluetoa($earning->amount*$earning->price*1000);
+	$blockUrl = $coin->createExplorerLink($coin->name, array('height'=>$block->height), ['class'=>'text-decoration-none fw-bold text-dark']);
 
-	$blockUrl = $coin->createExplorerLink($coin->name, array('height'=>$block->height));
-	echo '<tr class="ssrow">';
-	echo '<td width="18"><img width="16" src="'.$coin->image.'"></td>';
-	echo '<td><b>'.$blockUrl.'</b><span style="font-size: .8em;"> ('.$coin->algo.')</span></td>';
-	echo '<td align="right" style="font-size: .8em;">'.$height.'</td>';
-	echo '<td align="right" style="font-size: .8em;"><b>'.$reward.' '.$coin->symbol_show.'</b></td>';
-	echo '<td align="right" style="font-size: .8em;">'.$percent.'%</td>';
-	echo '<td align="right" style="font-size: .8em;">'.$value.'</td>';
-	echo '<td align="right" style="font-size: .8em;">'.$d.'&nbsp;ago</td>';
-	echo '<td align="right" style="font-size: .8em;">';
+	echo '<tr>';
+	echo '  <td class="ps-4 text-center"><img width="18" src="'.$coin->image.'" class="rounded-circle shadow-sm"></td>';
+	echo '  <td>'.$blockUrl.' <small class="text-muted text-uppercase">('.$coin->algo.')</small></td>';
+	echo '  <td class="text-end small">'.$height.'</td>';
+	echo '  <td class="text-end fw-bold">'.$reward.' <small class="text-muted">'.$coin->symbol_show.'</small></td>';
+	echo '  <td class="text-end small">'.$percent.'%</td>';
+	echo '  <td class="text-end small font-monospace">'.$value.'</td>';
+	echo '  <td class="text-center small text-muted">'.$d.' ago</td>';
+	echo '  <td class="text-end pe-4">';
 
 	if($earning->status == 0) {
 		$eta = '';
@@ -97,22 +89,15 @@ foreach($earnings as $earning)
 			$t = (int) ($coin->mature_blocks - $block->confirmations) * $coin->block_time;
 			$eta = "ETA: ".sprintf('%dh %02dmn', ($t/3600), ($t/60)%60);
 		}
-		echo '<span class="block immature" title="'.$eta.'">Immature ('.$block->confirmations.'/'.$coin->mature_blocks.')</span>';
+		echo '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 w-100" title="'.$eta.'">IMMATURE ('.$block->confirmations.'/'.$coin->mature_blocks.')</span>';
 	}
+	else if($earning->status == 1) echo '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 w-100">'.(YAAMP_ALLOW_EXCHANGE ? 'EXCHANGE' : 'CONFIRMED').'</span>';
+	else if($earning->status == 2) echo '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 w-100">CLEARED</span>';
+	else if($earning->status == -1) echo '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 w-100">INVALID</span>';
 
-	else if($earning->status == 1)
-		echo '<span class="block exchange">'.(YAAMP_ALLOW_EXCHANGE ? 'Exchange' : 'Confirmed').'</span>';
-
-	else if($earning->status == 2)
-		echo '<span class="block cleared">Cleared</span>';
-
-	else if($earning->status == -1)
-		echo '<span class="block invalid">Invalid</span>';
-
-	echo "</td>";
-	echo "</tr>";
+	echo '  </td>';
+	echo '</tr>';
 }
 
-echo "</table>";
-
-echo "<br></div></div><br>";
+echo '        </tbody>';
+echo '      </table></div></div></div>';

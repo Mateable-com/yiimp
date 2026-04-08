@@ -1,148 +1,108 @@
 <?php
 
 $deposit = user()->getState('yaamp-deposit');
-echo "<a href='/renting/admin'>refresh</a><br>";
+
+echo "<div class='row mb-4'>";
+echo "<div class='col-12 d-flex justify-content-between align-items-center'>";
+echo "<h3 class='fw-bold mb-0'><i class='fa fa-user-shield me-2 text-danger'></i>Rental Administration</h3>";
+echo "<a href='/renting/admin' class='btn btn-outline-secondary rounded-pill fw-bold px-4 shadow-sm'><i class='fa fa-sync-alt me-1'></i>Refresh</a>";
+echo "</div>";
+echo "</div>";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-$list = getdbolist('db_rentertxs', "1 order by time desc limit 10");
-if(count($list) == 0) return;
-
-echo "<table class='dataGrid'>";
-
-echo "<thead>";
-echo "<tr>";
-echo "<th>ID</th>";
-echo "<th>Address</th>";
-echo "<th align=right>Time</th>";
-echo "<th align=right>Type</th>";
-echo "<th align=right>Amount</th>";
-echo "<th>Tx</th>";
-echo "</tr>";
-echo "</thead>";
-
-foreach($list as $tx)
+$list = getdbolist('db_rentertxs', "1 order by time desc limit 25");
+if(count($list) > 0)
 {
-	$d = datetoa2($tx->time);
-	$amount = bitcoinvaluetoa($tx->amount);
+    echo "<div class='card shadow-sm border-0 rounded-4 overflow-hidden mb-5'>";
+    echo "<div class='card-header bg-dark text-white py-3'><h5 class='mb-0 fw-bold'><i class='fa fa-history me-2'></i>Recent Transactions</h5></div>";
+    echo "<div class='card-body p-0'><div class='table-responsive'><table class='table table-hover mb-0'>";
+    echo "<thead class='bg-light small text-uppercase'><tr>";
+    echo "<th class='ps-4'>ID</th><th>Address</th><th class='text-end'>Time</th><th>Type</th><th class='text-end'>Amount</th><th class='pe-4'>TxID</th>";
+    echo "</tr></thead><tbody>";
 
-	$renter = getdbo('db_renters', $tx->renterid);
-	if(!$renter) continue;
+    foreach($list as $tx)
+    {
+        $d = datetoa2($tx->time);
+        $amount = bitcoinvaluetoa($tx->amount);
+        $renter = getdbo('db_renters', $tx->renterid);
+        if(!$renter) continue;
 
-	echo "<tr class='ssrow'>";
+        echo "<tr>";
+        echo "<td class='ps-4 fw-bold'>$renter->id</td>";
+        echo "<td><a href='/renting?address=$renter->address' class='text-decoration-none'>$renter->address</a></td>";
+        echo "<td class='text-end small'>$d ago</td>";
+        echo "<td><span class='badge ".($tx->type == 'deposit' ? 'bg-success' : 'bg-warning')."'>$tx->type</span></td>";
+        echo "<td class='text-end fw-bold font-monospace'>$amount</td>";
 
-	echo "<td>$renter->id</td>";
-	echo "<td><a href='/renting?address=$renter->address'>$renter->address</a></td>";
-
-	echo "<td align=right><b>$d ago</b></td>";
-	echo "<td align=right title='$tx->address'>$tx->type</td>";
-	echo "<td align=right><b>$amount</b></td>";
-
-	if(strlen($tx->tx) > 32)
-	{
-		$tx_show = substr($tx->tx, 0, 36).'...';
-		$txurl = "https://blockchain.info/tx/$tx->tx";
-		echo "<td style='font-family: monospace;'><a href='$txurl' target=_blank>$tx_show</a></td>";
-	}
-	else
-		echo "<td>$tx->tx</td>";
-
-	echo "</tr>";
+        if(strlen($tx->tx) > 32)
+        {
+            $tx_show = substr($tx->tx, 0, 8).'...'.substr($tx->tx, -8);
+            $txurl = "https://blockchain.info/tx/$tx->tx";
+            echo "<td class='pe-4'><a href='$txurl' target=_blank class='small font-monospace'>$tx_show</a></td>";
+        }
+        else echo "<td class='pe-4 small'>$tx->tx</td>";
+        echo "</tr>";
+    }
+    echo "</tbody></table></div></div></div>";
 }
-
-echo "</table><br>";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-echo "<br><table class='dataGrid'>";
-echo "<thead>";
-echo "<tr>";
-echo "<th>Renter</th>";
-echo "<th>Address</th>";
-echo "<th>Email</th>";
-echo "<th>Spent</th>";
-echo "<th>Balance</th>";
-echo "<th>Unconfirmed</th>";
-echo "<th>Jobs</th>";
-echo "<th>Active</th>";
-echo "</tr>";
-echo "</thead><tbody>";
+echo "<div class='card shadow-sm border-0 rounded-4 overflow-hidden mb-5'>";
+echo "<div class='card-header bg-primary text-white py-3'><h5 class='mb-0 fw-bold'><i class='fa fa-users me-2'></i>Active Renters</h5></div>";
+echo "<div class='card-body p-0'><div class='table-responsive'><table class='table table-hover mb-0'>";
+echo "<thead class='bg-light small text-uppercase'><tr>";
+echo "<th class='ps-4'>ID</th><th>Address / Email</th><th class='text-end'>Spent</th><th class='text-end'>Balance</th><th class='text-end'>Unconf.</th><th class='text-center pe-4'>Jobs</th>";
+echo "</tr></thead><tbody>";
 
-$list = getdbolist('db_renters', "balance>0 order by balance desc");
+$list = getdbolist('db_renters', "balance>0 or spent>0 order by balance desc, spent desc");
 foreach($list as $renter)
 {
 	$count = dboscalar("select count(*) from jobs where renterid=$renter->id");
 	$active = dboscalar("select count(*) from jobs where renterid=$renter->id and active");
 
-	if($deposit == $renter->address)
-		echo "<tr class='ssrow' style='background-color: #dfd'>";
-	else
-		echo "<tr class='ssrow'>";
+    $row_class = ($deposit == $renter->address) ? 'table-info' : '';
 
-	echo "<td>$renter->id</td>";
-	echo "<td><a href='/renting?address=$renter->address'>$renter->address</a></td>";
-	echo "<td>$renter->email</td>";
-	echo "<td>$renter->spent</td>";
-	echo "<td>$renter->balance</td>";
-	echo "<td>$renter->unconfirmed</td>";
-	echo "<td>$count</td>";
-	echo "<td>$active</td>";
+	echo "<tr class='$row_class'>";
+	echo "<td class='ps-4 fw-bold'>$renter->id</td>";
+	echo "<td><a href='/renting?address=$renter->address' class='fw-bold text-decoration-none'>$renter->address</a><br><small class='text-muted'>$renter->email</small></td>";
+	echo "<td class='text-end small'>".bitcoinvaluetoa($renter->spent)."</td>";
+	echo "<td class='text-end fw-bold text-success font-monospace'>".bitcoinvaluetoa($renter->balance)."</td>";
+	echo "<td class='text-end text-warning small'>".bitcoinvaluetoa($renter->unconfirmed)."</td>";
+	echo "<td class='text-center pe-4'><span class='badge bg-primary'>$active / $count</span></td>";
 	echo "</tr>";
 }
-
-echo "</tbody></table>";
+echo "</tbody></table></div></div></div>";
 
 /////////////////////////////////////////////////////////////////////////////
 
-echo "<br><table class='dataGrid'>";
-echo "<thead>";
-echo "<tr>";
-echo "<th>Renter</th>";
-echo "<th>Job</th>";
-echo "<th>Address</th>";
-echo "<th>Algo</th>";
-echo "<th>Host</th>";
-echo "<th>Max Price</th>";
-echo "<th>Max Hash</th>";
-echo "<th>Current Hash</th>";
-echo "<th>Difficulty</th>";
-echo "<th>Ready</th>";
-echo "<th>Active</th>";
-echo "</tr>";
-echo "</thead><tbody>";
+echo "<div class='card shadow-sm border-0 rounded-4 overflow-hidden mb-5'>";
+echo "<div class='card-header bg-success text-white py-3'><h5 class='mb-0 fw-bold'><i class='fa fa-microchip me-2'></i>Active Mining Jobs</h5></div>";
+echo "<div class='card-body p-0'><div class='table-responsive'><table class='table table-hover mb-0'>";
+echo "<thead class='bg-light small text-uppercase'><tr>";
+echo "<th class='ps-4'>ID</th><th>Algo</th><th>Target Server</th><th class='text-end'>Price</th><th class='text-end'>Hashrate</th><th class='text-center pe-4'>Status</th>";
+echo "</tr></thead><tbody>";
 
-$list = getdbolist('db_jobs', "ready");
+$list = getdbolist('db_jobs', "ready order by active desc, id desc");
 foreach($list as $job)
 {
 	$hashrate = yaamp_job_rate($job->id);
-	$hashrate = $hashrate? Itoa2($hashrate).'h/s': '';
-
-	$speed = Itoa2($job->speed).'h/s';
+	$hashrate_str = $hashrate? Itoa2($hashrate).'h/s': '-';
+	$speed_str = $job->speed > 0 ? Itoa2($job->speed).'h/s' : 'MAX';
 
 	$renter = getdbo('db_renters', $job->renterid);
 	if(!$renter) continue;
 
-	if($deposit == $renter->address)
-		echo "<tr class='ssrow' style='background-color: #dfd'>";
-	else
-		echo "<tr class='ssrow'>";
+    $row_class = $job->active ? 'table-success bg-opacity-10' : 'table-warning bg-opacity-10';
 
-	echo "<td>$job->renterid</td>";
-	echo "<td>$job->id</td>";
-	echo "<td><a href='/renting?address=$renter->address'>$renter->address</a></td>";
-	echo "<td><a href='/site/gomining?algo=$job->algo'>$job->algo</td>";
-	echo "<td>$job->host:$job->port</td>";
-	echo "<td>$job->price</td>";
-	echo "<td>$speed</td>";
-	echo "<td>$hashrate</td>";
-	echo "<td>$job->difficulty</td>";
-	echo "<td>$job->ready</td>";
-	echo "<td>$job->active</td>";
+	echo "<tr class='$row_class'>";
+	echo "<td class='ps-4 fw-bold'>$job->id <small class='text-muted'>(R#$job->renterid)</small></td>";
+	echo "<td><span class='badge bg-light text-dark fw-bold border'>$job->algo</span></td>";
+	echo "<td class='small'>$job->host:$job->port<br><span class='text-muted font-monospace'>$job->username</span></td>";
+	echo "<td class='text-end'>".mbitcoinvaluetoa($job->price)."</td>";
+	echo "<td class='text-end fw-bold'>$hashrate_str <small class='text-muted fw-normal'>/ $speed_str</small></td>";
+	echo "<td class='text-center pe-4'>".($job->active ? '<span class="badge bg-success">ACTIVE</span>' : '<span class="badge bg-warning text-dark">READY</span>')."</td>";
 	echo "</tr>";
 }
-
-echo "</tbody></table>";
-
-echo "<br><br><br><br><br><br><br><br><br><br>";
-
-
+echo "</tbody></table></div></div></div>";

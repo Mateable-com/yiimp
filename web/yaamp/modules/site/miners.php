@@ -10,33 +10,29 @@ JavascriptFile('/yaamp/ui/js/auto_refresh.js');
 
 $height = '240px';
 
-echo <<<end
+echo <<<END
+<div class="container-fluid py-4">
 
-<div id='resume_update_button' style='color: #444; background-color: #ffd; border: 1px solid #eea;
-	padding: 10px; margin-left: 20px; margin-right: 20px; margin-top: 15px; cursor: pointer; display: none;'
-	onclick='auto_page_resume();' align=center>
-	<b>Auto refresh is paused - Click to resume</b></div>
+    <div id='resume_update_button' class="alert alert-warning text-center shadow-sm mb-4 fw-bold animate-pulse" style='cursor: pointer; display: none;' onclick='auto_page_resume();'>
+        <i class="fa fa-play me-2"></i>Live Data Paused - Click to Resume
+    </div>
 
-<table cellspacing=20 width=100%>
-<tr><td valign=top width=50%>
+    <div class="row g-4">
+        <!-- Left Column: Miners Activity -->
+        <div class="col-lg-7">
+            <div id='miners_results' class="mb-4">
+                <div class="d-flex justify-content-center py-5">
+                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                </div>
+            </div>
+        </div>
 
-<div id='miners_results'>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
+        <!-- Right Column: Pool Wide Data -->
+        <div class="col-lg-5">
+            <div id='pool_current_results' class="mb-4"></div>
+        </div>
+    </div>
 </div>
-
-</td><td valign=top>
-
-<div id='pool_current_results'>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
-
-</td></tr></table>
-
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
 
 <script>
 
@@ -80,7 +76,7 @@ function miners_refresh()
 </script>
 
 
-end;
+END;
 
 
 

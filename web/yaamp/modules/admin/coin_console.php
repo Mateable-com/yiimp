@@ -1,19 +1,45 @@
 <?php
 
-if (!$coin) $this->goback();
-$this->pageTitle = 'Console - '.$coin->symbol;
-
-$remote = new WalletRPC($coin);
-
-echo getAdminSideBarLinks().'<br/><br/>';
-
-$info = $remote->getinfo();
-if (!$info) {
-	echo $remote->error;
-	return;
+if (!isset($coin) || !$coin) {
+    echo '<div class="alert alert-danger">Coin object not found.</div>';
+    return;
 }
 
-echo getAdminWalletLinks($coin, $info, 'console').'<br/><br/>';
+$this->pageTitle = 'Console - '.$coin->symbol;
+$query = isset($query) ? $query : '';
+
+try {
+    $remote = new WalletRPC($coin);
+    $info = $remote->getinfo();
+} catch (Exception $e) {
+    $info = false;
+    $remote_error = $e->getMessage();
+}
+
+echo '<div class="container-fluid py-4">';
+
+// --- Header Card ---
+echo '<div class="card shadow-sm border-0 mb-4 bg-dark text-white rounded-3">';
+echo '  <div class="card-body p-4 d-flex align-items-center">';
+echo '    <div class="me-4 shadow-sm bg-white rounded-circle p-2" style="width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;">';
+echo '      <img src="'.$coin->image.'" style="max-width: 48px; max-height: 48px;">';
+echo '    </div>';
+echo '    <div class="flex-grow-1">';
+echo '      <h3 class="mb-0 fw-bold">'.$coin->name.' <span class="text-primary fs-5">RPC Console</span></h3>';
+echo '      <div class="small text-muted"><i class="fa fa-plug me-1"></i> Connected to '.$coin->rpchost.':'.$coin->rpcport.'</div>';
+echo '    </div>';
+echo '    <div class="ms-auto">';
+echo '      <a href="/admin/coin?id='.$coin->id.'" class="btn btn-outline-light btn-sm rounded-pill fw-bold px-3"><i class="fa fa-arrow-left me-1"></i> Back to Wallet</a>';
+echo '    </div>';
+echo '  </div>';
+echo '</div>';
+
+if (!$info) {
+    $err = isset($remote_error) ? $remote_error : (isset($remote->error) ? $remote->error : 'Unknown RPC error');
+	echo '<div class="alert alert-danger shadow-sm border-0"><i class="fa fa-exclamation-triangle me-2"></i><b>RPC Connection Error:</b> '.$err.'</div>';
+    echo '</div>'; // close container
+	return;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -35,42 +61,103 @@ function colorizeJson($json)
 	// keys
 	$res = preg_match_all("#&quot;([^&]+)&quot;:#", $json, $matches);
 	if ($res) foreach($matches[1] as $n=>$m) {
-		$json = str_replace('&quot;'.$m."&quot;", '"<s class="key">'.$m.'</s>"', $json);
-	}
-	// humanize timestamps like "blocktime": 1462359961,
-	$res = preg_match_all("#: ([0-9]{10})([,\s])#", $json, $matches);
-	if ($res) foreach($matches[1] as $n=>$m) {
-		$ts = intval($m);
-		if ($ts > 1400000000 && $ts < 1600000000) {
-			$sfx = $matches[2][$n];
-			$date = strftime("<u>%Y-%m-%d %T %z</u>", $ts);
-			$json = str_replace(' '.$m.$sfx, ' "'.$date.'"'.$sfx, $json);
-		}
+		$json = str_replace('&quot;'.$m."&quot;", '"<s class="key text-info">'.$m.'</s>"', $json);
 	}
 	// numeric
 	$res = preg_match_all("#: ([e\-\.0-9]+)([,\s])#", $json, $matches);
 	if ($res) foreach($matches[1] as $n=>$m) {
 		$sfx = $matches[2][$n];
-		$json = str_replace(' '.$m.$sfx, ' <i>'.$m.'</i>'.$sfx, $json);
+		$json = str_replace(' '.$m.$sfx, ' <i class="text-warning">'.$m.'</i>'.$sfx, $json);
 	}
 	$json = preg_replace('#\[\s+\]#', '[]', $json);
-	$json = str_replace('[', '<b>[</b>', $json);
-	$json = str_replace(']', '<b>]</b>', $json);
-	$json = str_replace('{', '<b>{</b>', $json);
-	$json = str_replace('}', '<b>}</b>', $json);
+	$json = str_replace('[', '<b class="text-danger">[</b>', $json);
+	$json = str_replace(']', '<b class="text-danger">]</b>', $json);
+	$json = str_replace('{', '<b class="text-primary">{</b>', $json);
+	$json = str_replace('}', '<b class="text-primary">}</b>', $json);
 	return $json;
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
 
 $last_query = htmlentities(trim($query));
 
 echo <<<end
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+            <div class="card-header bg-secondary bg-opacity-10 py-3 border-0">
+                <div class="d-flex align-items-center">
+                    <h5 class="mb-0 fw-bold me-auto text-dark small text-uppercase" style="letter-spacing: 1px;">Command Input</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-dark px-3 fw-bold" onclick="quickCmd('getinfo')">getinfo</button>
+                        <button type="button" class="btn btn-outline-dark px-3 fw-bold" onclick="quickCmd('getbalance')">getbalance</button>
+                        <button type="button" class="btn btn-outline-dark px-3 fw-bold" onclick="quickCmd('listtransactions')">listtransactions</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body bg-light p-4">
+                <form id="console-form" action="/admin/coinconsole?id={$coin->id}" method="post" class="mb-0">
+                    <div class="input-group input-group-lg shadow-sm">
+                        <span class="input-group-text bg-dark border-dark text-success"><i class="fa fa-terminal"></i></span>
+                        <input class="form-control bg-dark text-success border-dark font-monospace" value="{$last_query}" type="text" name="query" id="console-input" placeholder="Enter RPC command (e.g. getinfo, listtransactions, sendtoaddress...)" autocomplete="off">
+                        <button class="btn btn-success fw-bold px-4" type="submit">EXECUTE</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-lg border-0 rounded-3 bg-black overflow-hidden">
+            <div class="card-header border-0 py-2 d-flex align-items-center" style="background: #1a1a1a">
+                <div class="d-flex gap-1 me-2">
+                    <span class="rounded-circle bg-danger" style="width: 10px; height: 10px;"></span>
+                    <span class="rounded-circle bg-warning" style="width: 10px; height: 10px;"></span>
+                    <span class="rounded-circle bg-success" style="width: 10px; height: 10px;"></span>
+                </div>
+                <div class="text-muted small fw-bold font-monospace mx-auto">RPC TERMINAL OUTPUT</div>
+            </div>
+            <div class="card-body p-4 font-monospace terminal-container" style="min-height: 300px; color: #00ff00;">
+end;
+
+$result = '';
+if (!empty($query)) {
+	$result = $remote->execute($query);
+	if ($result === false) { $result = $remote->error; }
+	debuglog("{$coin->symbol} CONSOLE {$query}");
+}
+
+if (!empty($remote->error) && $remote->error != $result) {
+	$err = $remote->error;
+    echo '<div class="text-danger fw-bold mb-3 border-bottom border-danger border-opacity-25 pb-2"><i class="fa fa-exclamation-circle me-2"></i>RPC ERROR:</div>';
+	echo '<pre class="text-danger mb-4">';
+	echo is_string($err) ? htmlentities($err) : htmlentities(json_encode($err, 128));
+	echo '</pre>';
+}
+
+echo '<div class="terminal-body" style="white-space: pre-wrap; word-break: break-all;">';
+if ($result !== '') {
+    echo is_string($result) ? htmlentities($result) : colorizeJson(htmlentities(json_encode($result, 128)));
+} else {
+    echo '<div class="text-muted opacity-50"><i>Waiting for command...</i></div>';
+}
+echo '</div></div></div></div></div>';
+
+echo '<style>
+    .font-monospace { font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important; }
+    .terminal-container { max-height: 600px; overflow-y: auto; background: #000; }
+    .terminal-body s { text-decoration: none; }
+    .terminal-body s.addr a { color: #00ff00; text-decoration: underline; opacity: 0.8; }
+    .terminal-body s.addr a:hover { opacity: 1; }
+    #console-input::placeholder { color: #004400; }
+    #console-input:focus { box-shadow: none; border-color: #00ff00; }
+</style>';
+
+echo <<<end
 <script type="text/javascript">
-function main_resize() {
-	var w = 0 + jQuery('div.form').width();
-	var wpx = (w - 100).toString() + 'px';
-	jQuery('.main-text-input').css({width: wpx});
+function quickCmd(cmd) {
+    $('#console-input').val(cmd);
+    $('#console-form').submit();
 }
 
 var lazyLinks;
@@ -89,55 +176,13 @@ function main_json_links() {
 		el.html(link);
 	});
 }
+
+$(function() {
+    $('#console-input').focus();
+    lazyLinks = setTimeout(main_json_links, 1000);
+});
 </script>
-
-<style type="text/css">
-div.form { margin-right: 8px; }
-div.rpcerror, div.terminal {
-	white-space: pre; font-family: monospace; unicode-bidi: embed; padding: 4px;
-	overflow-x: hidden;
-}
-div.rpcerror { color: darkred; background: transparent; margin-top: 0; margin-bottom: -8px; }
-div.terminal { color: silver; background: black; min-height: 180px; margin-left: 0; margin-right: 8px; margin-bottom: 8px; margin-top: 8px; }
-.terminal s { text-decoration: none; color: #ffffcf; }
-.terminal s.key { color: #ffff7f; }
-.terminal s a { color: #ffffcf; text-decoration: none; }
-.terminal s a:hover { text-decoration: underline; }
-.terminal u { text-decoration: none; color: #ff7f7f; }
-.terminal i { font-style: normal; color: #ff7fff; }
-.terminal b { font-style: normal; color: #ff3f3f; }
-.page .footer { width: auto; }
-</style>
-
-<div class="form">
-<form action="/admin/coinconsole?id={$coin->id}" method="post" style="padding: 0px;">
-<input class="main-text-input" value="{$last_query}" type="text" name="query" placeholder="Query" style="width: 50%; margin-right: 4px;">
-<input class="main-submit-button" type="submit" value="Execute" style="width: 80px;">
-</form>
-</div>
 end;
 
-$result = '';
-if (!empty($query)) {
-	$result = $remote->execute($query);
-	if ($result === false) {
-		$result = $remote->error;
-	}
-	debuglog("{$coin->symbol} CONSOLE {$query}");
-}
-
-if (!empty($remote->error) && $remote->error != $result) {
-	$err = $remote->error;
-	echo '<div class="rpcerror">';
-	echo is_string($err) ? htmlentities($err) : htmlentities(json_encode($err, 128));
-	echo '</div>';
-}
-
-echo '<div class="terminal">';
-echo is_string($result) ? htmlentities($result) : colorizeJson(htmlentities(json_encode($result, 128)));
-echo '</div>';
-
-JavascriptReady("main_resize(); $(window).resize(main_resize); $('.main-text-input:first').focus();");
-
-JavascriptReady("lazyLinks = setTimeout(main_json_links, 2000);");
-
+echo '</div>'; // close main container
+?>

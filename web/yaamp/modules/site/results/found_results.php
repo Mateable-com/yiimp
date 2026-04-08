@@ -30,8 +30,30 @@ if($algo_from_query_param) {
 $count = getparam('count');
 $count = $count? $count: 50;
 
-$algo_header = isset($r_algo) ? implode(',', $r_algo) : 'any algo';
-WriteBoxHeader("Last $count Blocks ($algo_header)");
+$algo_header = isset($r_algo) ? implode(',', $r_algo) : 'Global';
+
+echo '<div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">';
+echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-cubes me-2 text-warning"></i>Last '.$count.' Blocks: <span class="text-warning small text-uppercase">'.$algo_header.'</span></h5>';
+echo '    <span class="badge bg-secondary">Recent Discovery</span>';
+echo '  </div>';
+echo '  <div class="card-body p-0">';
+echo '    <div class="table-responsive">';
+echo '      <table class="table table-hover align-middle mb-0 small" id="found-blocks-table">';
+echo '        <thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">';
+echo '          <tr>';
+echo '            <th class="ps-4" style="width: 40px;"></th>';
+echo '            <th>Asset / Algo</th>';
+echo '            <th class="text-end">Amount</th>';
+echo '            <th class="text-end">Difficulty</th>';
+echo '            <th class="text-end">Height</th>';
+echo '            <th class="text-center">Time Ago</th>';
+echo '            <th class="text-center">Effort</th>';
+echo '            <th class="text-center">Method</th>';
+echo '            <th class="text-end pe-4">Status</th>';
+echo '          </tr>';
+echo '        </thead>';
+echo '        <tbody>';
 
 $criteria = new CDbCriteria();
 $criteria->condition = "t.category NOT IN ('stake','generated')";
@@ -43,78 +65,20 @@ $criteria->limit = $count;
 $criteria->order = 't.time DESC';
 $db_blocks = getdbolistWith('db_blocks', 'coin', $criteria);
 
-echo <<<EOT
-
-<style type="text/css">
-span.block { padding: 2px; display: inline-block; text-align: center; min-width: 75px; border-radius: 3px; }
-span.block.new       { color: white; background-color: #ad4ef0; }
-span.block.orphan    { color: white; background-color: #d9534f; }
-span.block.immature  { color: white; background-color: #f0ad4e; }
-span.block.confirmed { color: white; background-color: #5cb85c; }
-span.shared 
-{
-    padding: 2px;
-    display: inline-block;
-    text-align: center;
-    min-width: 15px;
-    border-radius: 3px;
-    color: white;
-    background-color: #87d547;
-}
-span.solo	
-{ 
-	padding: 2px; 
-	display: inline-block; 
-	text-align: center; 
-	min-width: 15px; 
-	border-radius: 3px; 
-	color: white; 
-	background-color: #48D8D8; 
-}
-
-b.row a { font-size: 10pt; }
-.ssrow td.row { font-size: .8em; }
-td.right { text-align: right; }
-</style>
-
-<table class="dataGrid2">
-<thead>
-<tr>
-<td></td>
-<th>Name</th>
-<th align="right">Amount</th>
-<th align="right">Difficulty</th>
-<th align="right">Block</th>
-<th align="right">Time</th>
-<th>Effort</th>
-<th align="right">Type</th>
-<th align="right">Status</th>
-</tr>
-</thead>
-EOT;
-
 foreach($db_blocks as $db_block)
 {
 	$d = datetoa2($db_block->time);
 	if(!$db_block->coin_id)
 	{
-		if (!$showrental)
-			continue;
-
+		if (!$showrental) continue;
 		$reward = bitcoinvaluetoa($db_block->amount);
-
-		echo '<tr class="ssrow">';
-		echo '<td width="18px"><img width="16px" src="/images/btc.png"/></td>';
-		echo '<td class="row"><b>Rental</b> ('.$db_block->algo.')</td>';
-		echo '<td class="row right"><b>'.$reward.' BTC</b></td>';
-		echo '<td class="row right"></td>';
-		echo '<td class="row right"></td>';
-		echo '<td class="row right">'.$d.' ago</td>';
-		echo '<td class="row right">';
-		echo '<span class="block confirmed">Confirmed</span>';
-		echo '</td>';
+		echo '<tr>';
+		echo '  <td class="ps-4 text-center"><img width="18" src="/images/btc.png" class="rounded-circle shadow-sm"></td>';
+		echo '  <td><span class="fw-bold">Rental Power</span> <small class="text-muted text-uppercase">('.$db_block->algo.')</small></td>';
+		echo '  <td class="text-end fw-bold text-primary">'.$reward.' BTC</td>';
+		echo '  <td colspan="4"></td>';
+		echo '  <td class="text-end pe-4"><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 w-100">CONFIRMED</span></td>';
 		echo '</tr>';
-
 		continue;
 	}
 
@@ -122,59 +86,40 @@ foreach($db_blocks as $db_block)
 	$coin = $db_block->coin ? $db_block->coin : getdbo('db_coins', $db_block->coin_id);
 	$difficulty = Itoa2($db_block->difficulty, 3);
 	$height = number_format($db_block->height, 0, '.', ' ');
+	$link = $coin->createExplorerLink($coin->name, array('hash'=>$db_block->blockhash), ['class'=>'text-decoration-none fw-bold text-dark']);
+	$flags = $db_block->segwit ? '&nbsp;<img src="/images/ui/segwit.png" height="8px" title="segwit"/>' : '';
 
-	$link = $coin->createExplorerLink($coin->name, array('hash'=>$db_block->blockhash));
-
-	$flags = $db_block->segwit ? '&nbsp;<img src="/images/ui/segwit.png" height="8px" valign="center" title="segwit"/>' : '';
-
-	echo '<tr class="ssrow">';
-	echo '<td width="18px"><img width="16px" src="'.$coin->image.'"></td>';
-	echo '<td class="row"><b class="row">'.$link.'</b> ('.$db_block->algo.')'.$flags.'</td>';
-	echo '<td class="row right"><b>'.$reward.' '.$coin->symbol_show.'</b></td>';
-	echo '<td class="row right" title="found '.$db_block->difficulty_user.'">'.$difficulty.'</td>';
-	echo '<td class="row right">'.$height.'</td>';
-	echo '<td class="row right">'.$d.' ago</td>';
-
-	if ($db_block->effort)	
-		echo '<td>'.$db_block->effort.'%</td>';
-	else
-		echo '<td>N/A</td>';
+	echo '<tr>';
+	echo '  <td class="ps-4 text-center"><img width="18" src="'.$coin->image.'" class="rounded-circle shadow-sm"></td>';
+	echo '  <td>'.$link.' <small class="text-muted text-uppercase">('.$db_block->algo.')</small>'.$flags.'</td>';
+	echo '  <td class="text-end fw-bold">'.$reward.' <small class="text-muted">'.$coin->symbol_show.'</small></td>';
+	echo '  <td class="text-end small font-monospace" title="Found: '.$db_block->difficulty_user.'">'.$difficulty.'</td>';
+	echo '  <td class="text-end small">'.$height.'</td>';
+	echo '  <td class="text-center small text-muted">'.$d.' ago</td>';
+	echo '  <td class="text-center small">'.($db_block->effort ? $db_block->effort.'%' : 'N/A').'</td>';
 	
-	echo '<td class="row right">';
-	if($db_block->solo == '1') 
-		echo '<span class="solo" title="Block was found by solo miner">Solo</span>';
-	else if($db_block->solo == '0')
-		echo '<span class="shared" title="Block found was Shared">Shared</span>';
-	else 
-		echo '<span></span>';
-	echo "</td>";
+	$methodBadge = ($db_block->solo == '1') ? '<span class="badge bg-info text-uppercase" style="font-size: 0.6rem;">SOLO</span>' : '<span class="badge bg-light text-dark border text-uppercase" style="font-size: 0.6rem;">SHARED</span>';
+	echo '  <td class="text-center">'.$methodBadge.'</td>';
 
-	echo '<td class="row right">';
-	if($db_block->category == 'orphan')
-		echo '<span class="block orphan">Orphan</span>';
-
+	echo '  <td class="text-end pe-4">';
+	if($db_block->category == 'orphan') echo '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 w-100">ORPHAN</span>';
 	else if($db_block->category == 'immature') {
 		$eta = '';
 		if ($coin->block_time && $coin->mature_blocks) {
 			$t = (int) ($coin->mature_blocks - $db_block->confirmations) * $coin->block_time;
 			$eta = "ETA: ".sprintf('%dh %02dmn', ($t/3600), ($t/60)%60);
 		}
-		if($coin->mature_blocks == NULL) echo '<span class="block immature" title="'.$eta.'">Immature ('.$db_block->confirmations.')</span>';
-		else echo '<span class="block immature" title="'.$eta.'">Immature ('.$db_block->confirmations.'/'.$coin->mature_blocks.')</span>';
+		$confText = ($coin->mature_blocks) ? '('.$db_block->confirmations.'/'.$coin->mature_blocks.')' : '('.$db_block->confirmations.')';
+		echo '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 w-100" title="'.$eta.'">IMMATURE '.$confText.'</span>';
 	}
-	else if($db_block->category == 'generate')
-		echo '<span class="block confirmed">Confirmed</span>';
-
-	else if($db_block->category == 'new')
-		echo '<span class="block new">New</span>';
-
-	echo "</td>";
-	echo "</tr>";
+	else if($db_block->category == 'generate') echo '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 w-100">CONFIRMED</span>';
+	else if($db_block->category == 'new') echo '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 w-100">NEW</span>';
+	echo '  </td>';
+	echo '</tr>';
 }
 
-echo "</table>";
-
-echo "<br></div></div><br>";
+echo '        </tbody>';
+echo '      </table></div></div></div>';
 
 
 

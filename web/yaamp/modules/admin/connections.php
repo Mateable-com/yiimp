@@ -1,17 +1,30 @@
 <?php
 
+$this->pageTitle = 'Network Connections - Admin';
+
+echo '<div class="container-fluid py-4">';
+
+// --- Admin Navigation Bar ---
 echo getAdminSideBarLinks();
 
-echo <<<end
+echo '<div class="row g-4 mb-4 align-items-center">';
+echo '  <div class="col-md-6">';
+echo '    <h3 class="mb-0 fw-bold text-dark"><i class="fa fa-network-wired me-2 text-primary"></i>Stratum Connections</h3>';
+echo '  </div>';
+echo '</div>';
 
-<div id='main_results'></div>
+echo '<div id="main_results" class="mb-5">';
+echo '  <div class="text-center py-5">';
+echo '    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+echo '    <p class="mt-2 text-muted">Polling active stratum nodes...</p>';
+echo '  </div>';
+echo '</div>';
 
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
+echo '</div>'; // close container
 
-<script>
+?>
+
+<script type="text/javascript">
 
 var main_delay = 30000;
 
@@ -34,15 +47,7 @@ function main_error()
 function main_refresh()
 {
 	var url = "/admin/connections_results";
-	$.get(url, '', main_ready).error(main_error);
+	$.get(url, '', main_ready).fail(main_error);
 }
 
 </script>
-
-end;
-
-
-
-
-
-

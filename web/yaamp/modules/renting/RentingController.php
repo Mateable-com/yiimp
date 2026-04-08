@@ -37,7 +37,24 @@ class RentingController extends CommonController
 			return;
 		}
 
-		if(md5($password) != $renter->password && (!empty($renter->password) || !empty($password)))
+		$login_success = false;
+		if (empty($renter->password) && empty($password)) {
+			$login_success = true;
+		} else if (strlen($renter->password) == 32) {
+			// Backward compatibility with MD5
+			if (md5($password) == $renter->password) {
+				$login_success = true;
+				// Migrate to modern hash
+				$renter->password = password_hash($password, PASSWORD_DEFAULT);
+				$renter->save();
+			}
+		} else {
+			if (password_verify($password, $renter->password)) {
+				$login_success = true;
+			}
+		}
+
+		if(!$login_success)
 		{
 			user()->setFlash('error', "Login failed.");
 			$this->render('login');
@@ -82,7 +99,7 @@ class RentingController extends CommonController
 		{
 			if($_POST['deposit_password'] == $_POST['deposit_confirm'])
 			{
-				$renter->password = md5($_POST['deposit_password']);
+				$renter->password = password_hash($_POST['deposit_password'], PASSWORD_DEFAULT);
 				$changed = true;
 			}
 			else
@@ -433,7 +450,7 @@ end;
 			return;
 		}
 
-		$coin = getdbosql('db_coins', "symbol='BTC'");
+		$coin = getdbosql('db_coins', "symbol=:symbol", array(':symbol'=>YAAMP_RENTER_COIN));
 		if(!$coin) return;
 
 		$remote = new WalletRPC($coin);

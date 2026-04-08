@@ -60,126 +60,133 @@ if(!controller()->admin)
 	setcookie('wallets', implode("|", $recents), time()+60*60*24*30, '/');
 
 echo <<<END
-<div id='resume_update_button' style='color: #444; background-color: #ffd; border: 1px solid #eea;
-	padding: 10px; margin-left: 20px; margin-right: 20px; margin-top: 15px; cursor: pointer; display: none;'
-	onclick='auto_page_resume();' align=center>
-	<b>Auto refresh is paused - Click to resume</b></div>
+<div class="container-fluid py-4">
 
-<table cellspacing=20 width=100%>
-<tr><td valign=top width=50%>
+    <div id='resume_update_button' class="alert alert-warning text-center shadow-sm mb-4 fw-bold animate-pulse" style='cursor: pointer; display: none;' onclick='auto_page_resume();'>
+        <i class="fa fa-play me-2"></i>Live Data Paused - Click to Resume
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: User Specific Data -->
+        <div class="col-lg-7">
 END;
 
 if($user) echo <<<END
-<div id='main_wallet_results'>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
-END;
+            <div id='main_wallet_results' class="mb-4">
+                <div class="d-flex justify-content-center py-5">
+                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                </div>
+            </div>
 
-if($user) echo <<<END
-<div class="main-left-box">
-<div class="main-left-title">Last 24 Hours Balance: $user->username</div>
-<div class="main-left-inner"><br>
-<div id='graph_earnings_results' style='height: 240px;'></div>
-<div style='float: right;'>
-<span style='font-size: .8em; color: #4bb2c5;'>Balance</span>
-<span style='font-size: .8em; color: #eaa228;'>Pending</span>
-</div>
-<br>
-</div></div><br>
-END;
+            <?php if (!empty($user->rent_address)): ?>
+            <?php
+                $rent_user = getdbosql('db_accounts', "username=:address", array(':address'=>$user->rent_address));
+                $rent_balance = $rent_user ? bitcoinvaluetoa($rent_user->balance) : '0.00000000';
+            ?>
+            <div class="card shadow-sm border-0 mb-4 rounded-4 bg-primary bg-opacity-10 border-primary border-opacity-25">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-primary fw-bold mb-1 text-uppercase small" style="letter-spacing: 1px;"><i class="fa fa-bitcoin me-2"></i>Renter Bonus BTC</h6>
+                        <div class="font-monospace fw-bold text-dark mb-0"><?= $user->rent_address ?></div>
+                        <p class="text-muted small mb-0 mt-1">Renter bonuses are paid directly to this Bitcoin address.</p>
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.65rem;">Current Balance</div>
+                        <div class="h4 mb-0 fw-bold text-primary font-monospace"><?= $rent_balance ?> <small class="text-muted fs-6">BTC</small></div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
-if($user) echo <<<END
-<div id='main_graphs_results'>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
-END;
+            <div class="card shadow-sm border-0 mb-4 rounded-4">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-chart-area me-2 text-info"></i>Last 24 Hours Balance: <small class="text-muted font-monospace">$user->username</small></h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div id='graph_earnings_results' style='height: 280px;'></div>
+                    <div class="d-flex justify-content-end gap-3 mt-2">
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3">Balance</span>
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3">Pending</span>
+                    </div>
+                </div>
+            </div>
 
-if($user) echo <<<END
-<div id='main_miners_results'>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
-END;
-
-if($user) echo <<<END
-<div id='main_found_results'>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
+            <div id='main_graphs_results' class="mb-4"></div>
+            <div id='main_miners_results' class="mb-4"></div>
+            <div id='main_found_results' class="mb-4"></div>
 END;
 
 echo <<<END
-<div class="main-left-box">
-<div class="main-left-title">Search Wallet:</div>
-<div class="main-left-inner">
-<form action="/" method="get" style="padding: 10px;">
-<input type="text" name="address" class="main-text-input" placeholder="Wallet Address">
-<input type="submit" value="Submit" class="main-submit-button" ><br><br>
+            <div class="card shadow-sm border-0 mb-4 rounded-4">
+                <div class="card-header bg-dark text-white py-3 border-0">
+                    <h5 class="mb-0 fw-bold small text-uppercase"><i class="fa fa-search me-2 text-primary"></i>Wallet Search & History</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="/" method="get" class="mb-4">
+                        <div class="input-group">
+                            <input type="text" name="address" class="form-control border-2 bg-light px-3" placeholder="Enter Wallet Address...">
+                            <button class="btn btn-primary px-4 fw-bold" type="submit">SEARCH</button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem;">
+                                <tr>
+                                    <th class="ps-3" style="width: 40px;"></th>
+                                    <th>Address</th>
+                                    <th class="text-end">Balance</th>
+                                    <th class="text-center" style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
 END;
 
-echo "<table class='dataGrid2'>";
 foreach($recents as $addr)
 {
-	if(empty($addr)) continue;
+    if(empty($addr)) continue;
 
-	$user = getuserparam($addr);
-	if(!$user) continue;
+    $u = getuserparam($addr);
+    if(!$u) continue;
 
-	$coin = getdbo('db_coins', $user->coinid);
+    $c = getdbo('db_coins', $u->coinid);
+    $activeClass = ($u->username == $username) ? 'table-primary bg-opacity-10' : '';
 
-	if($user->username == $username)
-		echo "<tr style='background-color: #e0d3e8;'><td width=24>";
-	else
-		echo "<tr class='ssrow'><td width=24>";
+    echo '<tr class="'.$activeClass.'">';
+    echo '  <td class="ps-3">'.($c ? '<img width="20" src="'.$c->image.'" class="rounded-circle shadow-sm">' : '').'</td>';
+    echo '  <td><a class="address text-decoration-none font-monospace fw-bold" href="/?address='.$addr.'">'.$addr.'</a></td>';
 
-	if($coin)
-		echo '<img width="16px" src="'.$coin->image.'">';
+    $bal = bitcoinvaluetoa($u->balance); 
+    $balText = ($bal > 0) ? $bal.' '.($c ? $c->symbol : 'BTC') : '<span class="text-muted">0.0000</span>';
 
-	echo '</td><td><a class="address" href="/?address='.$addr.'" style="font-family: monospace; font-size: 1.1em;">'.
-		$addr.'</a></td>';
-
-	$balance = bitcoinvaluetoa($user->balance); 
-
-	if($coin)
-		$balance = $balance>0? "$balance $coin->symbol": '';
-	else
-		$balance = $balance>0? "$balance BTC": '';
-
-	echo '<td align="right">'.$balance.'</td>';
-	
-	$delicon = $address == $addr ? '' : '<img src="/images/base/delete.png" onclick="javascript:drop_cookie(this);" style="cursor:pointer;"/>';
-	echo '<td style="width: 16px; max-width: 16px;">'.$delicon.'</td>';
-	
-	echo '</tr>';
+    echo '  <td class="text-end fw-bold">'.$balText.'</td>';
+    
+    $delBtn = ($address == $addr) ? '' : '<button class="btn btn-link btn-sm text-danger p-0" onclick="javascript:drop_cookie(this);"><i class="fa fa-times-circle"></i></button>';
+    echo '  <td class="text-center">'.$delBtn.'</td>';
+    echo '</tr>';
 }
 
-echo "</table></form></div></div><br>";
-
-echo "</td><td valign=top>";
-
 echo <<<END
-<div id='pool_current_results'>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Pool Wide Data -->
+        <div class="col-lg-5">
+            <div id='pool_current_results' class="mb-4"></div>
 END;
 
 if($user) echo <<<END
-<div id='found_results'>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
+            <div id='found_results' class="mb-4"></div>
 END;
 
 echo <<<END
-
-</td></tr></table>
-
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
+        </div>
+    </div>
+</div>
 
 <script>
 

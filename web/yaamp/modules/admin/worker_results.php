@@ -5,58 +5,34 @@ if (isset($_GET['algo']))
 
 $algo = user()->getState('yaamp-algo');
 
-JavascriptFile("/yaamp/ui/js/jquery.metadata.js");
-JavascriptFile("/yaamp/ui/js/jquery.tablesorter.widgets.js");
+$workers = getdbolist('db_workers', "algo=:algo order by name", array(':algo' => $algo));
 
-echo <<<end
-<div align="right" style="margin-top: -20px; margin-bottom: 6px;">
-<input class="search" type="search" data-column="all" style="width: 140px;" placeholder="Search..." />
-</div>
-<style type="text/css">
-tr.ssrow.filtered { display: none; }
-</style>
-end;
-
-showTableSorter('maintable', "{
-    tableClass: 'dataGrid',
-    textExtraction: {
-        6: function(node, table, n) { return $(node).attr('data'); }
-    },
-    widgets: ['zebra','filter','Storage','saveSort'],
-    widgetOptions: {
-        saveSort: true,
-        filter_saveFilters: false,
-        filter_external: '.search',
-        filter_columnFilters: false,
-        filter_childRows : true,
-        filter_ignoreCase: true
-    }
-}");
-
-echo <<<end
-<thead>
-<tr>
-<th data-sorter="" width="20"></th>
-<th data-sorter="text">Coin</th>
-<th data-sorter="text">Address</th>
-<th data-sorter="text">Pass</th>
-<th data-sorter="text">Client</th>
-<th data-sorter="text">Version</th>
-<th data-sorter="numeric">Hashrate</th>
-<th data-sorter="numeric">Diff</th>
-<th data-sorter="numeric">Shares</th>
-<th data-sorter="numeric">Bad</th>
-<th data-sorter="numeric">%</th>
-<th data-sorter="numeric">Found</th>
-<th data-sorter="text" width="30">Name</th>
-<th data-sorter="text"></th>
-</tr>
-</thead><tbody>
-end;
-
-$workers = getdbolist('db_workers', "algo=:algo order by name", array(
-    ':algo' => $algo
-));
+echo '<div class="card shadow-sm border-0 mb-4">';
+echo '  <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-microchip me-2 text-info"></i>Active Workers: '.strtoupper($algo).'</h5>';
+echo '    <div class="d-flex gap-2">';
+echo '      <input class="search form-control form-control-sm border-secondary bg-dark text-white" type="search" data-column="all" style="width: 200px;" placeholder="Search rigs..." />';
+echo '      <span class="badge bg-primary d-flex align-items-center px-3 fw-bold">Total: '.count($workers).'</span>';
+echo '    </div>';
+echo '  </div>';
+echo '  <div class="card-body p-0">';
+echo '    <div class="table-responsive">';
+echo '      <table class="table table-hover align-middle mb-0 small" id="maintable">';
+echo '        <thead class="table-light text-muted text-uppercase" style="font-size: 0.7rem;">';
+echo '          <tr>';
+echo '            <th class="ps-4" width="20"></th>';
+echo '            <th>Coin</th>';
+echo '            <th>Wallet / Rig Name</th>';
+echo '            <th>Client / Version</th>';
+echo '            <th>IP / DNS</th>';
+echo '            <th class="text-end">Hashrate</th>';
+echo '            <th class="text-end">Difficulty</th>';
+echo '            <th class="text-end">Bad %</th>';
+echo '            <th class="text-center">Found Blocks</th>';
+echo '            <th class="text-end pe-4">Share %</th>';
+echo '          </tr>';
+echo '        </thead>';
+echo '        <tbody>';
 
 $total_rate = 0.0;
 foreach ($workers as $worker) {
@@ -65,77 +41,66 @@ foreach ($workers as $worker) {
 
 foreach ($workers as $worker) {
     $user_rate = yaamp_worker_rate($worker->id);
-    $percent   = 0.0;
-    if ($total_rate)
-        $percent = (100.0 * $user_rate) / $total_rate;
-    $user_bad    = yaamp_worker_rate_bad($worker->id);
-    $pct_bad     = ($user_rate + $user_bad) ? round($user_bad * 100 / ($user_rate + $user_bad), 3) : 0;
-    $user_rate_h = $user_rate ? Itoa2($user_rate) . 'H' : '-';
-
-    $name     = $worker->worker;
-    $user     = $coin = NULL;
-    $coinimg  = '';
-    $coinlink = '';
-    $coinsym  = '';
-    $shares   = '';
+    $percent = $total_rate ? (100.0 * $user_rate) / $total_rate : 0.0;
+    $user_bad = yaamp_worker_rate_bad($worker->id);
+    $pct_bad = ($user_rate + $user_bad) ? round($user_bad * 100 / ($user_rate + $user_bad), 1) : 0;
+    
+    $user = $coin = NULL;
     if ($worker->userid) {
         $user = getdbo('db_accounts', $worker->userid);
-        if ($user) {
-            $coin     = getdbo('db_coins', $user->coinid);
-            $coinsym  = $coin->symbol;
-            $coinimg  = CHtml::image($coin->image, $coin->symbol, array(
-                'width' => '16'
-            ));
-            $coinlink = CHtml::link($coin->name, '/admin/coin?id=' . $coin->id);
-        }
-        $name = empty($name) ? $user->login : $name;
-        $gift = $user->donation;
+        if ($user) $coin = getdbo('db_coins', $user->coinid);
     }
 
     $dns = !empty($worker->dns) ? $worker->dns : $worker->ip;
-    if (strlen($worker->dns) > 40)
-        $dns = '...' . substr($worker->dns, strlen($worker->dns) - 40);
+    if (strlen($dns) > 25) $dns = substr($dns, 0, 22).'...';
 
-    echo "<tr class='ssrow'>";
-    echo '<td width="20">' . $coinimg . '</td>';
-    echo '<td><b>' . $coinlink . '</b>' . ($coinsym ? '&nbsp;(' . $coinsym . ')' : '-') . '</td>';
-    echo "<td><a href='/?address=$worker->name'><b>$worker->name</b></a></td>";
-    echo "<td>$worker->password</td>";
-    echo "<td title='$worker->ip'>$dns</td>";
-    echo "<td>$worker->version</td>";
-    echo "<td data=\"$user_rate\">$user_rate_h</td>";
-    echo "<td>$worker->difficulty</td>";
+	echo '<tr>';
+	echo '<td class="ps-4">';
+    if ($coin) echo '<img src="'.$coin->image.'" width="18" class="rounded-circle shadow-sm">';
+    else echo '<i class="fa fa-question-circle text-muted"></i>';
+    echo '</td>';
 
-    $shares = dboscalar("SELECT COUNT(id) as shares FROM shares WHERE workerid=:worker AND algo=:algo", array(
-        ':worker' => $worker->id,
-        ':algo' => $algo
-    ));
-    echo "<td>$shares</td>";
+	echo '<td>';
+    if ($coin) echo '<b>'.CHtml::link($coin->symbol, '/admin/coin?id='.$coin->id, ['class'=>'text-decoration-none text-dark']).'</b>';
+    else echo '-';
+    echo '</td>';
 
-    echo "<td>";
-    if ($user_bad > 0) {
-        if ($pct_bad > 50)
-            echo "<b> {$pct_bad}%</b>";
-        else
-            echo " {$pct_bad}%";
-    }
-    echo "</td>";
+	echo '<td>';
+    echo '  <div class="fw-bold font-monospace" style="font-size: 0.8rem;">'.CHtml::link(substr($worker->name,0,12).'...', '/?address='.$worker->name, ['class'=>'text-primary text-decoration-none', 'target'=>'_blank']).'</div>';
+    echo '  <div class="text-muted small">ID: '.$worker->worker.'</div>';
+    echo '</td>';
 
-    $worker_blocs = dboscalar("SELECT COUNT(id) as blocs FROM blocks WHERE workerid=:worker AND algo=:algo", array(
-        ':worker' => $worker->id,
-        ':algo' => $algo
-    ));
-    $user_blocs   = dboscalar("SELECT COUNT(id) as blocs FROM blocks WHERE userid=:user AND algo=:algo
-        AND time > (SELECT min(time) FROM workers WHERE algo=:algo)", array(
-        ':user' => $worker->userid,
-        ':algo' => $algo
-    ));
-    echo '<td>' . number_format($percent, 1, '.', '') . '%</td>';
+	echo '<td>';
+    echo '  <div class="fw-bold">'.$worker->password.'</div>';
+    echo '  <div class="small text-muted">'.$worker->version.'</div>';
+    echo '</td>';
 
-    echo '<td>' . $worker_blocs . ' / ' . $user_blocs . '</td>';
-    echo '<td>' . $name . '</td>';
-    echo '<td>' . (isset($gift) && $gift ? "$gift&nbsp;%" : '') . '</td>';
-    echo '</tr>';
+    echo '<td><span class="badge bg-light text-dark border font-monospace" title="'.$worker->ip.'">'.$dns.'</span></td>';
+
+	echo '<td class="text-end fw-bold text-dark">'.($user_rate ? Itoa2($user_rate).'h/s' : '-').'</td>';
+	echo '<td class="text-end">'.round($worker->difficulty, 2).'</td>';
+
+	echo '<td class="text-end">';
+	if ($pct_bad > 0) {
+        $b_class = $pct_bad > 10 ? 'bg-danger' : ($pct_bad > 5 ? 'bg-warning text-dark' : 'bg-light text-muted');
+        echo '<span class="badge '.$b_class.'">'.$pct_bad.'%</span>';
+    } else echo '<span class="text-muted">-</span>';
+	echo '</td>';
+
+    $worker_blocs = (int)dboscalar("SELECT COUNT(id) FROM blocks WHERE workerid=:worker AND algo=:algo", array(':worker'=>$worker->id, ':algo'=>$algo));
+	echo '<td class="text-center fw-bold">'.($worker_blocs?:'-').'</td>';
+
+	echo '<td class="text-end pe-4 text-muted">'.number_format($percent, 1).'%</td>';
+	echo '</tr>';
 }
 
-echo "</tbody></table>";
+echo "        </tbody>";
+echo '        <tfoot class="table-dark">';
+echo '          <tr>';
+echo '            <th colspan="5" class="ps-4 small text-uppercase">Total Algo Hashrate</th>';
+echo '            <th class="text-end text-warning">'.Itoa2($total_rate).'h/s</th>';
+echo '            <th colspan="4"></th>';
+echo '          </tr>';
+echo '        </tfoot>';
+echo "      </table></div></div></div>";
+?>

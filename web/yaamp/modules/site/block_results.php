@@ -27,130 +27,95 @@ showTableSorter('maintable', "{
 	}
 }");
 
-echo <<<end
-<style type="text/css">
-span.block { padding: 2px; display: inline-block; text-align: center; min-width: 15px; border-radius: 3px; }
-span.block.new       { color: white; background-color: #ad4ef0; }
-span.block.orphan    { color: white; background-color: #d9534f; }
-span.block.immature  { color: white; background-color: #f0ad4e; }
-span.block.confirmed { color: white; background-color: #5cb85c; }
-span.block2 { padding: 2px; display: inline-block; text-align: center; min-width: 35px; border-radius: 3px; margin-right: 5px; }
-span.block2.solo { color: white;  background-color: #4BB2C5 !important; }
-
-</style>
-
-<thead>
-<tr>
-<th width="20"></th>
-<th>Name</th>
-<th>Time</th>
-<th>Height</th>
-<th>Amount</th>
-<th>Type</th>
-<th>Effort</th>
-<th>Status</th>
-<th>Difficulty</th>
-<th>Share Diff</th>
-<th>Finder</th>
-<th>Blockhash</th>
-</tr>
-</thead><tbody>
-end;
+echo '<div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">';
+echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-cubes me-2 text-primary"></i>Latest Blocks: <span class="text-primary small text-uppercase">'.($coin ? $coin->name : 'All').'</span></h5>';
+echo '    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">Live Explorer</span>';
+echo '  </div>';
+echo '  <div class="card-body p-0">';
+echo '    <div class="table-responsive">';
+echo '      <table class="table table-hover align-middle mb-0 small" id="maintable">';
+echo '        <thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">';
+echo '          <tr>';
+echo '            <th class="ps-4" style="width: 40px;"></th>';
+echo '            <th>Asset Name</th>';
+echo '            <th>Time Ago</th>';
+echo '            <th class="text-end">Height</th>';
+echo '            <th class="text-end">Amount</th>';
+echo '            <th class="text-center">Method</th>';
+echo '            <th class="text-center">Effort</th>';
+echo '            <th class="text-center">Status</th>';
+echo '            <th class="text-end">Difficulty</th>';
+echo '            <th class="text-end">Share Diff</th>';
+echo '            <th class="text-center">Finder</th>';
+echo '            <th class="text-end pe-4">Blockhash</th>';
+echo '          </tr>';
+echo '        </thead>';
+echo '        <tbody>';
 
 foreach($db_blocks as $db_block)
 {
 	if(!$db_block->coin_id) continue;
-
 	if(!$coin) continue;
 
 	if($db_block->category == 'stake' && !$this->admin) continue;
-	if($db_block->category == 'generated' && !$this->admin) continue; // mature stake income
+	if($db_block->category == 'generated' && !$this->admin) continue;
 
-//	$remote = new WalletRPC($coin);
+	$activeClass = ($db_block->category == 'immature') ? 'table-warning bg-opacity-10' : '';
+	echo '<tr class="'.$activeClass.'">';
 
-// 	$blockext = $remote->getblock($db_block->blockhash);
-// 	$tx = $remote->gettransaction($blockext['tx'][0]);
+	echo '  <td class="ps-4 text-center"><img width="18" src="'.$coin->image.'" class="rounded-circle shadow-sm"></td>';
 
-// 	$db_block->category = $tx['details'][0]['category'];
+	$flags = $db_block->segwit ? '&nbsp;<img src="/images/ui/segwit.png" height="8px" title="segwit"/>' : '';
 
-	if($db_block->category == 'immature')
-		echo "<tr style='background-color: #e0d3e8;'>";
-	else
-		echo "<tr class='ssrow'>";
-
-	echo '<td><img width="16" src="'.$coin->image.'"></td>';
-
-	$flags = $db_block->segwit ? '&nbsp;<img src="/images/ui/segwit.png" height="8px" valign="center" title="segwit"/>' : '';
-
-	echo '<td>';
-	if ($this->admin)
-		echo '<a href="/site/coin?id='.$coin->id.'"><b>'.$coin->name.'</b></a>';
-	else
-		echo '<b>'.$coin->name.'</b>';
-	echo '&nbsp;('.$coin->symbol.')'.$flags.'</td>';
-
-//	$db_block->confirmations = $blockext['confirmations'];
-//	$db_block->save();
+	echo '  <td>';
+	if ($this->admin) echo '<a href="/site/coin?id='.$coin->id.'" class="text-decoration-none fw-bold">'.$coin->name.'</a>';
+	else echo '<span class="fw-bold">'.$coin->name.'</span>';
+	echo ' <small class="text-muted">('.$coin->symbol.')</small>'.$flags.'</td>';
 
 	$d = datetoa2($db_block->time);
-	echo '<td data="'.$db_block->time.'"><b>'.$d.' ago</b></td>';
-	echo '<td>'.$coin->createExplorerLink($db_block->height, array('height'=>$db_block->height)).'</td>';
-	echo '<td>'.$db_block->amount.'</td>';
+	echo '  <td data="'.$db_block->time.'">'.$d.' ago</td>';
+	echo '  <td class="text-end fw-bold">'.$coin->createExplorerLink($db_block->height, array('height'=>$db_block->height), ['class'=>'text-decoration-none']).'</td>';
+	echo '  <td class="text-end fw-bold">'.$db_block->amount.'</td>';
 	
-	echo '<td>';
-	if($db_block->solo == '1') 
-		echo '<span class="block2 solo" title="Block was found by solo miner">solo</span>';
-	else echo '<span></span>'; 
-	echo "</td>";
+	$methodBadge = ($db_block->solo == '1') ? '<span class="badge bg-info text-uppercase" style="font-size: 0.6rem;">SOLO</span>' : '<span class="badge bg-light text-dark border text-uppercase" style="font-size: 0.6rem;">SHARED</span>';
+	echo '  <td class="text-center">'.$methodBadge.'</td>';
 
-	if ($db_block->effort)	
-		echo '<td>'.$db_block->effort.'%</td>';
-	else
-		echo '<td>N/A</td>';
+	echo '  <td class="text-center">'.($db_block->effort ? $db_block->effort.'%' : 'N/A').'</td>';
 	
-	echo '<td class="'.strtolower($db_block->category).'">';
-
-	if($db_block->category == 'orphan')
-		echo '<span class="block orphan">Orphan</span>';
-
+	echo '  <td class="text-center">';
+	if($db_block->category == 'orphan') echo '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 w-100">ORPHAN</span>';
 	else if($db_block->category == 'immature') {
 		$eta = '';
 		if ($coin->block_time && $coin->mature_blocks) {
 			$t = (int) ($coin->mature_blocks - $db_block->confirmations) * $coin->block_time;
 			$eta = "ETA: ".sprintf('%dh %02dmn', ($t/3600), ($t/60)%60);
 		}
-		echo '<span class="block immature" title="'.$eta.'">Immature ('.$db_block->confirmations.'/'.$coin->mature_blocks.')</span>';
+		echo '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 w-100" title="'.$eta.'">IMMATURE ('.$db_block->confirmations.'/'.$coin->mature_blocks.')</span>';
 	}
+	else if($db_block->category == 'generate') echo '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 w-100">CONFIRMED</span>';
+	else if($db_block->category == 'stake') echo '<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 w-100">STAKE</span>';
+	else if($db_block->category == 'generated') echo '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 w-100">STAKE</span>';
+	echo '  </td>';
 
-	else if($db_block->category == 'generate')
-		echo '<span class="block confirmed">Confirmed</span>';
-
-	else if($db_block->category == 'stake')
-		echo "Stake ({$db_block->confirmations})";
-
-	else if($db_block->category == 'generated')
-		echo '<span class="block stake">Stake</span>';
-
-	echo "</td>";
-
-	echo '<td>'.round_difficulty($db_block->difficulty).'</td>';
+	echo '  <td class="text-end font-monospace">'.round_difficulty($db_block->difficulty).'</td>';
 	$diff_user = $db_block->difficulty_user;
-	if (!$diff_user && substr($db_block->blockhash,0,4) == '0000')
-		$diff_user = hash_to_difficulty($coin, $db_block->blockhash);
-	echo '<td>'.round_difficulty($diff_user).'</td>';
+	if (!$diff_user && substr($db_block->blockhash,0,4) == '0000') $diff_user = hash_to_difficulty($coin, $db_block->blockhash);
+	echo '  <td class="text-end font-monospace">'.round_difficulty($diff_user).'</td>';
 
 	$finder = '';
 	if (!empty($db_block->userid)) {
 		$user = getdbo('db_accounts', $db_block->userid);
 		$finder = $user ? substr($user->username, 0, 7).'...' : '';
 	}
+	echo '  <td class="text-center small font-monospace">'.$finder.'</td>';
 	
-	echo '<td>'.$finder.'</td>';
-	echo '<td style="font-size: .8em; font-family: monospace;">';
-	echo $coin->createExplorerLink($db_block->blockhash, array('hash'=>$db_block->blockhash));
-	echo "</td>";
-	echo "</tr>";
+	echo '  <td class="text-end pe-4 font-monospace" style="font-size: 0.75rem;">';
+	echo $coin->createExplorerLink(substr($db_block->blockhash, 0, 16).'...', array('hash'=>$db_block->blockhash), ['class'=>'text-decoration-none']);
+	echo '  </td>';
+	echo '</tr>';
 }
 
-echo "</tbody></table>";
+echo '        </tbody>';
+echo '      </table></div></div></div>';
 

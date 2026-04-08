@@ -14,143 +14,105 @@ $this->widget('UniForm');
 $renter = getrenterparam(user()->getState('yaamp-deposit'));
 if(!$renter) return;
 
-echo <<<end
-<style>
-.yaamp-login-container
-{
-	padding: 20px;
-	border: 1px solid #ddd;
-	border-radius: 8px;
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
-}
-</style>
+$coin = getdbosql('db_coins', "symbol=:symbol", array(':symbol'=>YAAMP_RENTER_COIN));
+$coin_name = $coin ? $coin->name : 'Bitcoin';
+$coin_symbol = $coin ? $coin->symbol : 'BTC';
+$coin_scheme = $coin ? strtolower($coin->name) : 'bitcoin';
 
-<table cellspacing=20 width=100%>
-<tr><td valign=top width=50%>
+?>
 
-<div class="yaamp-login-container">
-<form action='/renting?address=$renter->address' method='post'>
+<div class="row g-4 mt-2">
+    <div class="col-lg-7">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-dark text-white p-4 border-0">
+                <h4 class="mb-0 fw-bold"><i class="fa fa-cog me-2 text-warning"></i>Account Settings</h4>
+                <p class="text-white-50 small mb-0 mt-1">Configure your renter profile and security.</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-4">
+                    <h6 class="fw-bold mb-2"><i class="fa fa-exclamation-circle me-1"></i> Important Information</h6>
+                    <p class="small mb-2">This is your unique <?= $coin_name ?> deposit address. Fund it to start renting hashpower.</p>
+                    <div class="bg-white p-3 rounded border text-center">
+                        <span class="font-monospace fs-5 fw-bold text-dark d-block mb-2"><?= $renter->address ?></span>
+                        <img class="img-fluid rounded shadow-sm" src="https://chart.googleapis.com/chart?cht=qr&amp;chl=<?= $coin_scheme ?>%3A<?= $renter->address ?>&amp;choe=UTF-8&amp;chs=200x200">
+                    </div>
+                    <p class="small mt-2 mb-0">Minimum deposit: 0.001 <?= $coin_symbol ?>. Save this address to login next time.</p>
+                </div>
 
-<p style='font-size: 1.2em;'><b>This is your bitcoin deposit address to use to fund your account.</b></p>
-<p style='font-size: 1.2em;'><b>Save it as you will need it to login the next time you want to access your account.</b></p>
+                <form action='/renting?address=<?= $renter->address ?>' method='post'>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Email Address</label>
+                            <input value='<?= $renter->email ?>' type="email" name="deposit_email" placeholder="Optional - for recovery" class="form-control border-2 bg-light">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted text-uppercase">API Key</label>
+                            <div class="input-group">
+                                <input readonly value='<?= $renter->apikey ?>' type="text" id="api_key" class="form-control border-2 bg-light font-monospace">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyApiKey()"><i class="fa fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase">New Password</label>
+                            <input type="password" name="deposit_password" placeholder='Leave empty for no change' class="form-control border-2 bg-light">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Confirm Password</label>
+                            <input type="password" name="deposit_confirm" class="form-control border-2 bg-light">
+                        </div>
+                    </div>
 
-<span style='font-family: monospace; background-color: #eee; font-size: 1.3em;'>$renter->address</span><br>
-<img width="200" height="200" src="https://chart.googleapis.com/chart?cht=qr&amp;chl=bitcoin%3A$renter->address&amp;choe=UTF-8&amp;chs=200x200">
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-5 fw-bold rounded-pill shadow-sm">SAVE SETTINGS</button>
+                        <button type="button" class="btn btn-outline-secondary px-4 fw-bold rounded-pill" onclick='javascript:window.history.back()'>CANCEL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-<p>Minimum deposit 0.001 BTC.</p>
-
-<p>Choose a password to secure access to your account. The email is optional and may be used in the future
-if you forget your password.</p>
-
-<table cellspacing=10>
-<tr><td>Email</td><td><input value='$renter->email' type="text" name="deposit_email" placeholder="optional" class="main-text-input" style='width: 280px;'></td></tr>
-<tr><td>API Key</td><td><input readonly value='$renter->apikey' type="text" name="deposit_apikey" class="main-text-input" style='width: 280px;'></td></tr>
-<tr><td>Deposit Address</td><td><input readonly value='$renter->address' type="text" name="deposit_address" class="main-text-input" style='width: 280px;'></td></tr>
-<tr><td>Password</td><td><input type="password" name="deposit_password" placeholder='leave empty for no change' class="main-text-input" style='width: 280px;'></td></tr>
-<tr><td>Confirm</td><td><input type="password" name="deposit_confirm" class="main-text-input" style='width: 280px;'></td></tr>
-</table>
-
-<br><br>
-<input type="submit" value="Save" class="main-submit-button">
-<input type="button" value="Cancel" class="main-submit-button" onclick='javascript:window.history.back()'>
-</form>
+    <div class="col-lg-5">
+        <div id='pool_current_results' class="mb-4"></div>
+        
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="mb-0 fw-bold"><i class="fa fa-chart-line me-2 text-primary"></i>Renting Price (<?= $algo ?>)</h5>
+            </div>
+            <div class="card-body p-3">
+                <div id='graph_results_price' style='height: 240px;'></div>
+            </div>
+        </div>
+    </div>
 </div>
-
-</td><td valign=top>
-
-<div id='pool_current_results'>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
-
-<div class="main-left-box">
-<div class="main-left-title">Last 24 Hours Renting ($algo)</div>
-<div class="main-left-inner"><br>
-<div id='graph_results_price' style='height: 240px;'></div><br>
-</div></div><br>
-
-</td></tr></table>
-
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
 
 <script>
 
-function page_refresh()
-{
-	pool_current_refresh();
-	main_refresh_price();
+function copyApiKey() {
+    var copyText = document.getElementById("api_key");
+    copyText.select();
+    document.execCommand("copy");
+    alert("API Key copied to clipboard");
 }
 
-function select_algo(algo)
-{
-	window.location.href = '/site/algo?algo='+algo;
-}
-
-////////////////////////////////////////////////////
-
-function pool_current_ready(data)
-{
-	$('#pool_current_results').html(data);
-}
-
-function pool_current_refresh()
-{
-	var url = "/renting/status_results";
-	$.get(url, '', pool_current_ready);
-}
-
-///////////////////////////////////////////////////////////////////////
-
-function main_refresh_price()
-{
-	var url = "/renting/graph_price_results";
-	$.get(url, '', graph_init_price);
-}
+function page_refresh() { pool_current_refresh(); main_refresh_price(); }
+function select_algo(algo) { window.location.href = '/site/algo?algo='+algo; }
+function pool_current_ready(data) { $('#pool_current_results').html(data); }
+function pool_current_refresh() { $.get("/renting/status_results", '', pool_current_ready); }
+function main_refresh_price() { $.get("/renting/graph_price_results", '', graph_init_price); }
 
 function graph_init_price(data)
 {
 	$('#graph_results_price').empty();
-
 	var t = $.parseJSON(data);
 	var plot1 = $.jqplot('graph_results_price', t,
 	{
-		title: '<b>Renting Price (mBTC/Mh/day)</b>',
 		axes: {
-			xaxis: {
-				tickInterval: 7200,
-				renderer: $.jqplot.DateAxisRenderer,
-				tickOptions: {formatString: '<font size=1>%#Hh</font>'}
-			},
-			yaxis: {
-				min: 0,
-				tickOptions: {formatString: '<font size=1>%#.3f &nbsp;</font>'}
-			}
+			xaxis: { tickInterval: 7200, renderer: $.jqplot.DateAxisRenderer, tickOptions: {formatString: '%#Hh'} },
+			yaxis: { min: 0, tickOptions: {formatString: '%#.3f'} }
 		},
-
-		seriesDefaults:
-		{
-			markerOptions: { style: 'none' }
-		},
-
-		grid:
-		{
-			borderWidth: 1,
-			shadowWidth: 0,
-			shadowDepth: 0,
-			background: '#ffffff'
-		},
-
+		seriesDefaults: { markerOptions: { style: 'none' }, shadow: false, color: '#3b82f6' },
+		grid: { borderWidth: 0, shadow: false, background: 'transparent' },
 	});
 }
 
 </script>
-
-end;
-
-
-
-
-

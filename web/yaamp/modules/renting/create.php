@@ -29,7 +29,12 @@ $renter->unconfirmed = 0;
 $renter->save();
 
 $renter = getdbo('db_renters', $renter->id);
-$renter->address = $remote->getaccountaddress(yaamp_renter_account($renter));
+$renter->address = $remote->getnewaddress(yaamp_renter_account($renter));
+
+if (!$renter->address) {
+	// fallback for very old versions or if getnewaddress fails
+	$renter->address = $remote->getaccountaddress(yaamp_renter_account($renter));
+}
 
 $renter->apikey = hash("sha256", $renter->address.time().rand());
 $renter->save();

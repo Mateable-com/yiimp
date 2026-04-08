@@ -12,37 +12,52 @@ JavascriptFile('/yaamp/ui/js/auto_refresh.js');
 $this->widget('UniForm');
 
 $balance = bitcoinvaluetoa($renter->balance);
+$coin = getdbosql('db_coins', "symbol=:symbol", array(':symbol'=>YAAMP_RENTER_COIN));
+$coin_symbol = $coin ? $coin->symbol : 'BTC';
 
-echo <<<END
+?>
 
-<table cellspacing=20 width=100%>
-<tr><td valign=top width=50%>
-
-<!--  -->
-
-<div id='balance_results'></div>
-<div id='orders_results'></div>
-
-</td><td valign=top>
-
-<div id='pool_current_results'>
-<br><br><br><br><br><br><br><br><br><br>
+<div class="row mb-4 mt-2">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 bg-dark text-white overflow-hidden" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
+            <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1 fw-bold text-warning"><i class="fa fa-server me-2"></i>Hashpower Rental Control</h3>
+                    <p class="text-white-50 mb-0">Manage your active mining jobs and redirect pool power to your targets.</p>
+                </div>
+                <div class="text-end">
+                    <div class="small text-white-50 text-uppercase fw-bold mb-1">Your Balance</div>
+                    <div class="h3 mb-0 fw-bold text-success font-monospace"><?= $balance ?> <small class="fs-6 text-white-50"><?= $coin_symbol ?></small></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div id='all_orders_results'></div>
-
-<div class="main-left-box">
-<div class="main-left-title">Last 24 Hours Renting ($algo)</div>
-<div class="main-left-inner"><br>
-<div id='graph_results_price' style='height: 240px;'></div><br>
-</div></div><br>
-
-</td></tr></table>
-
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div id='balance_results' class="mb-4"></div>
+        <div id='orders_results' class="mb-4"></div>
+    </div>
+    <div class="col-lg-5">
+        <div id='pool_current_results' class="mb-4">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Loading network status...</p>
+            </div>
+        </div>
+        <div id='all_orders_results' class="mb-4"></div>
+        
+        <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden">
+            <div class="card-header bg-light border-0 py-3">
+                <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-chart-line me-2 text-primary"></i>Price History (<?= $algo ?>)</h5>
+            </div>
+            <div class="card-body p-3">
+                <div id='graph_results_price' style='height: 240px;'></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 
@@ -60,129 +75,59 @@ function select_algo(algo)
 	window.location.href = '/site/algo?algo='+algo;
 }
 
-////////////////////////////////////////////////////
+function pool_current_ready(data) { $('#pool_current_results').html(data); }
+function pool_current_refresh() { $.get("/renting/status_results", '', pool_current_ready); }
 
-function pool_current_ready(data)
-{
-	$('#pool_current_results').html(data);
-}
+function balance_ready(data) { $('#balance_results').html(data); }
+function balance_refresh() { $.get("/renting/balance_results?address=<?= $renter->address ?>", '', balance_ready); }
 
-function pool_current_refresh()
-{
-	var url = "/renting/status_results";
-	$.get(url, '', pool_current_ready);
-}
+function orders_ready(data) { $('#orders_results').html(data); }
+function orders_refresh() { $.get("/renting/orders_results?address=<?= $renter->address ?>", '', orders_ready); }
 
-////////////////////////////////////////////////////
+function all_orders_ready(data) { $('#all_orders_results').html(data); }
+function all_orders_refresh() { $.get("/renting/all_orders_results?address=<?= $renter->address ?>", '', all_orders_ready); }
 
-function balance_ready(data)
-{
-	$('#balance_results').html(data);
-}
-
-function balance_refresh()
-{
-	var url = "/renting/balance_results?address=$renter->address";
-	$.get(url, '', balance_ready);
-}
-
-////////////////////////////////////////////////////
-
-function orders_ready(data)
-{
-	$('#orders_results').html(data);
-}
-
-function orders_refresh()
-{
-	var url = "/renting/orders_results?address=$renter->address";
-	$.get(url, '', orders_ready);
-}
-
-////////////////////////////////////////////////////
-
-function all_orders_ready(data)
-{
-	$('#all_orders_results').html(data);
-}
-
-function all_orders_refresh()
-{
-	var url = "/renting/all_orders_results?address=$renter->address";
-	$.get(url, '', all_orders_ready);
-}
-
-///////////////////////////////////////////////////////////////////////
-
-function main_refresh_price()
-{
-	var url = "/renting/graph_price_results";
-	$.get(url, '', graph_init_price);
-}
+function main_refresh_price() { $.get("/renting/graph_price_results", '', graph_init_price); }
 
 function graph_init_price(data)
 {
 	$('#graph_results_price').empty();
-
 	var t = $.parseJSON(data);
 	var plot1 = $.jqplot('graph_results_price', t,
 	{
-		title: '<b>Renting Price (mBTC/Mh/day)</b>',
+		title: '',
 		axes: {
 			xaxis: {
 				tickInterval: 7200,
 				renderer: $.jqplot.DateAxisRenderer,
-				tickOptions: {formatString: '<font size=1>%#Hh</font>'}
+				tickOptions: {formatString: '%#Hh'}
 			},
 			yaxis: {
 				min: 0,
-				tickOptions: {formatString: '<font size=1>%#.3f &nbsp;</font>'}
+				tickOptions: {formatString: '%#.3f'}
 			}
 		},
-
-		seriesDefaults:
-		{
-			markerOptions: { style: 'none' }
-		},
-
-		grid:
-		{
-			borderWidth: 1,
-			shadowWidth: 0,
-			shadowDepth: 0,
-			background: '#ffffff'
-		},
-
+		seriesDefaults: { markerOptions: { style: 'none' }, shadow: false, color: '#3b82f6' },
+		grid: { borderWidth: 0, shadow: false, background: 'transparent' },
 	});
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 function order_edit(jobid)
 {
-	$('#order-edit-dialog').load('/renting/orderdialog?address=$renter->address&id='+jobid).dialog(
+	$('#order-edit-dialog').load('/renting/orderdialog?address=<?= $renter->address ?>&id='+jobid).dialog(
 	{
 		title: 'Edit Job',
 		autoOpen: true,
 		modal: true,
-		width: 480,
-		height: 480,
+		width: 500,
 		buttons:
 		{
-			"Submit": function()
-			{
-				$('#order-edit-form').submit();
-			},
-
-			"Cancel": function()
-			{
-				$(this).dialog('close');
-			},
-
+			"Submit": function() { $('#order-edit-form').submit(); },
+			"Cancel": function() { $(this).dialog('close'); },
 			"Delete": function()
 			{
-				var r = confirm("Are you sure you want to delete this job?");
-				if(r) window.location.href = '/renting/orderdelete?id='+jobid;
+				if(confirm("Are you sure you want to delete this job?")) 
+                    window.location.href = '/renting/orderdelete?id='+jobid;
 			},
 		}
 	});
@@ -190,27 +135,20 @@ function order_edit(jobid)
 
 function order_new()
 {
-	$('#order-edit-dialog').load('/renting/orderdialog?address=$renter->address').dialog(
+	$('#order-edit-dialog').load('/renting/orderdialog?address=<?= $renter->address ?>').dialog(
 	{
 		title: 'New Job',
 		autoOpen: true,
 		modal: true,
-		width: 480,
-		height: 480,
-		buttons:
-		{
-			"Submit": function()
-			{
-				$('#order-edit-form').submit();
-			}
-		}
+		width: 500,
+		buttons: { "Submit": function() { $('#order-edit-form').submit(); } }
 	});
 }
 
 function reset_spent()
 {
-	var r = confirm("Are you sure you want to reset the spent counter?");
-	window.location.href = '/renting/resetspent?address=$renter->address';
+	if(confirm("Are you sure you want to reset the spent counter?"))
+	    window.location.href = '/renting/resetspent?address=<?= $renter->address ?>';
 }
 
 function show_job_graph(jobid)
@@ -225,94 +163,52 @@ function show_job_graph(jobid)
 		$('#graph_toggle_job-'+jobid).attr('src', '/images/minus2-78.png');
 		$('#graph_placeholder_job-'+jobid).show();
 
-		var url = "/renting/graph_job_results?jobid="+jobid;
-	//	var url = "/renting/graph_price_results";
-
-		$.get(url, '', function (data)
+		$.get("/renting/graph_job_results?jobid="+jobid, '', function (data)
 		{
 			$('#graph_results_job-'+jobid).empty();
-
 			var t = $.parseJSON(data);
 			var plot1 = $.jqplot('graph_results_job-'+jobid, t,
 			{
-				title: '<b>Hashrate (Mh/s)</b>',
+				title: '',
 				axes: {
-					xaxis: {
-						tickInterval: 7200,
-						renderer: $.jqplot.DateAxisRenderer,
-						tickOptions: {formatString: '<font size=1>%#Hh</font>'}
-					},
-					yaxis: {
-						min: 0,
-						tickOptions: {formatString: '<font size=1>%#.3f &nbsp;</font>'}
-					}
+					xaxis: { tickInterval: 7200, renderer: $.jqplot.DateAxisRenderer, tickOptions: {formatString: '%#Hh'} },
+					yaxis: { min: 0, tickOptions: {formatString: '%#.3f'} }
 				},
-
-				seriesDefaults:
-				{
-					markerOptions: { style: 'none' }
-				},
-
-				grid:
-				{
-					borderWidth: 1,
-					shadowWidth: 0,
-					shadowDepth: 0,
-					background: '#ffffff'
-				},
-
+				seriesDefaults: { markerOptions: { style: 'none' }, shadow: false, color: '#10b981' },
+				grid: { borderWidth: 0, shadow: false, background: 'transparent' },
 			});
 		});
 	}
 }
 
-function main_renter_tx()
-{
-	var w = window.open("/renting/tx?address=$renter->address", "yaamp_tx",
+function main_renter_tx() {
+	window.open("/renting/tx?address=<?= $renter->address ?>", "yaamp_tx",
 		"width=800,height=600,location=no,menubar=no,resizable=yes,status=yes,toolbar=no");
 }
 
-function yaamp_withdraw()
-{
-	$('#yaamp-withdraw').dialog(
-	{
-		title: 'Withdraw',
-		autoOpen: true,
-		modal: true,
-		width: 480
-	});
+function yaamp_withdraw() {
+	$('#yaamp-withdraw').dialog({ title: 'Withdraw Funds', autoOpen: true, modal: true, width: 450 });
 }
 
 </script>
 
-<!-- ------------------------------------------------------------------------------ -->
-
 <div id="order-edit-dialog" style='display: none; overflow: hidden;'></div>
 
-
-<div id="yaamp-withdraw" style='display: none; overflow: hidden;'>
-<br>
-<form action='/renting/withdraw' method='post'>
-
-Amount: <input type="text" name="withdraw_amount" class="main-text-input" style='width: 100px;' value='$balance'><br>
-Address: <input type="text" name="withdraw_address" class="main-text-input" style='width: 300px;'>
-
-<br><br>
-<p>withdraw fees 0.0001</p>
-<br>
-<input type="submit" value="Withdraw" class="main-submit-button">
-</form>
-
+<div id="yaamp-withdraw" class="p-3" style='display: none; overflow: hidden;'>
+    <form action='/renting/withdraw' method='post'>
+        <div class="mb-3">
+            <label class="form-label fw-bold small text-uppercase">Amount (BTC)</label>
+            <input type="text" name="withdraw_amount" class="form-control" value='<?= $balance ?>'>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold small text-uppercase">Withdraw Address</label>
+            <input type="text" name="withdraw_address" class="form-control" placeholder="Bitcoin Address">
+        </div>
+        <div class="alert alert-info small py-2">
+            <i class="fa fa-info-circle me-1"></i> Withdrawal fee: 0.0001 BTC
+        </div>
+        <div class="text-end">
+            <input type="submit" value="Withdraw" class="btn btn-primary px-4 fw-bold rounded-pill shadow-sm">
+        </div>
+    </form>
 </div>
-
-END;
-
-
-
-
-
-
-
-
-
-
