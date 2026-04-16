@@ -46,6 +46,9 @@ echo '  <div class="col-lg-12">';
 echo '    <div id="pool_current_results"></div>';
 echo '  </div>';
 echo '  <div class="col-lg-12">';
+echo '    <div id="pool_mining_results"></div>';
+echo '  </div>';
+echo '  <div class="col-lg-12">';
 echo '    <div id="pool_history_results"></div>';
 echo '  </div>';
 echo '</div>';
@@ -57,6 +60,7 @@ echo '</div>'; // close container
 <script type="text/javascript">
 function page_refresh() {
     pool_current_refresh();
+    pool_mining_refresh();
     pool_history_refresh();
 }
 
@@ -67,11 +71,15 @@ function select_algo(algo) {
 function pool_current_ready(data) { $('#pool_current_results').html(data); }
 function pool_current_refresh() { $.get("/site/current_results", '', pool_current_ready); }
 
+function pool_mining_ready(data) { $('#pool_mining_results').html(data); }
+function pool_mining_refresh() { $.get("/site/mining_results", '', pool_mining_ready); }
+
 function pool_history_ready(data) { $('#pool_history_results').html(data); }
 function pool_history_refresh() { $.get("/site/history_results", '', pool_history_ready); }
 
 $(function() {
     pool_current_refresh();
+    pool_mining_refresh();
     pool_history_refresh();
 });
 </script>

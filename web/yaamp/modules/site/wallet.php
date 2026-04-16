@@ -71,36 +71,40 @@ echo <<<END
         <div class="col-lg-7">
 END;
 
-if($user) echo <<<END
+if($user)
+{
+    echo <<<END
             <div id='main_wallet_results' class="mb-4">
                 <div class="d-flex justify-content-center py-5">
                     <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
                 </div>
             </div>
+END;
 
-            <?php if (!empty($user->rent_address)): ?>
-            <?php
-                $rent_user = getdbosql('db_accounts', "username=:address", array(':address'=>$user->rent_address));
-                $rent_balance = $rent_user ? bitcoinvaluetoa($rent_user->balance) : '0.00000000';
-            ?>
+    if (YAAMP_RENTAL && !empty($user->rent_address)) {
+        $rent_user = getdbosql('db_accounts', "username=:address", array(':address'=>$user->rent_address));
+        $rent_balance = $rent_user ? bitcoinvaluetoa($rent_user->balance) : '0.00000000';
+        echo <<<END
             <div class="card shadow-sm border-0 mb-4 rounded-4 bg-primary bg-opacity-10 border-primary border-opacity-25">
                 <div class="card-body p-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-primary fw-bold mb-1 text-uppercase small" style="letter-spacing: 1px;"><i class="fa fa-bitcoin me-2"></i>Renter Bonus BTC</h6>
-                        <div class="font-monospace fw-bold text-dark mb-0"><?= $user->rent_address ?></div>
+                        <div class="font-monospace fw-bold text-dark mb-0">{$user->rent_address}</div>
                         <p class="text-muted small mb-0 mt-1">Renter bonuses are paid directly to this Bitcoin address.</p>
                     </div>
                     <div class="text-end">
                         <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.65rem;">Current Balance</div>
-                        <div class="h4 mb-0 fw-bold text-primary font-monospace"><?= $rent_balance ?> <small class="text-muted fs-6">BTC</small></div>
+                        <div class="h4 mb-0 fw-bold text-primary font-monospace">{$rent_balance} <small class="text-muted fs-6">BTC</small></div>
                     </div>
                 </div>
             </div>
-            <?php endif; ?>
+END;
+    }
 
+    echo <<<END
             <div class="card shadow-sm border-0 mb-4 rounded-4">
                 <div class="card-header bg-white py-3 border-0">
-                    <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-chart-area me-2 text-info"></i>Last 24 Hours Balance: <small class="text-muted font-monospace">$user->username</small></h5>
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-chart-area me-2 text-info"></i>Last 24 Hours Balance: <small class="text-muted font-monospace">{$user->username}</small></h5>
                 </div>
                 <div class="card-body p-4 pt-0">
                     <div id='graph_earnings_results' style='height: 280px;'></div>
@@ -115,6 +119,7 @@ if($user) echo <<<END
             <div id='main_miners_results' class="mb-4"></div>
             <div id='main_found_results' class="mb-4"></div>
 END;
+}
 
 echo <<<END
             <div class="card shadow-sm border-0 mb-4 rounded-4">

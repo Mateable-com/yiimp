@@ -918,7 +918,7 @@ class AdminController extends CommonController {
 	public function actionUpdatePrice()
 	{
 		if(!$this->admin) return;
-		backend_update_price();
+		BackendPricesUpdate();
 		$this->goback();
 	}
 

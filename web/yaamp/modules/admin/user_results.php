@@ -28,7 +28,7 @@ echo '          <tr>';
 echo '            <th class="ps-4" width="50">UID</th>';
 echo '            <th>Coin</th>';
 echo '            <th>Wallet Address</th>';
-echo '            <th>Linked Renter BTC</th>';
+if (YAAMP_RENTAL) echo '            <th>Linked Renter BTC</th>';
 echo '            <th class="text-center">Workers</th>';
 echo '            <th class="text-end">Hashrate</th>';
 echo '            <th class="text-end">Bad %</th>';
@@ -79,14 +79,16 @@ foreach($users as $user)
     echo '  <div class="text-muted" style="font-size: 0.65rem;">Last: '.$d.' ago</div>';
     echo '</td>';
 
-    echo '<td>';
-    if (!empty($user->rent_address)) {
-        $rent_user = getdbosql('db_accounts', "username=:address", array(':address'=>$user->rent_address));
-        $rent_balance = $rent_user ? bitcoinvaluetoa($rent_user->balance) : '0.00000000';
-        echo '<div class="fw-bold font-monospace small text-dark">'.substr($user->rent_address,0,12).'...</div>';
-        echo '<div class="text-success small fw-bold">'.$rent_balance.' BTC</div>';
-    } else echo '<span class="text-muted small">None</span>';
-    echo '</td>';
+    if (YAAMP_RENTAL) {
+        echo '<td>';
+        if (!empty($user->rent_address)) {
+            $rent_user = getdbosql('db_accounts', "username=:address", array(':address'=>$user->rent_address));
+            $rent_balance = $rent_user ? bitcoinvaluetoa($rent_user->balance) : '0.00000000';
+            echo '<div class="fw-bold font-monospace small text-dark">'.substr($user->rent_address,0,12).'...</div>';
+            echo '<div class="text-success small fw-bold">'.$rent_balance.' BTC</div>';
+        } else echo '<span class="text-muted small">None</span>';
+        echo '</td>';
+    }
 
 	echo '<td class="text-center"><span class="badge bg-secondary rounded-pill">'.$miner_count.'</span></td>';
 
