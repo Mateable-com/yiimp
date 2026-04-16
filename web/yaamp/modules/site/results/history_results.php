@@ -40,7 +40,7 @@ $t4 = time() - 30*24*60*60;
 $total1 = $total2 = $total3 = $total4 = 0;
 $main_ids = array();
 
-$list = dbolist("SELECT coin_id FROM blocks WHERE coin_id IN (select id from coins where algo=:algo and enable=1 and visible=1)
+$list = dbolist("SELECT coin_id FROM blocks WHERE coin_id IN (select id from coins where algo=:algo and enable=1)
 	AND time>$t4 AND NOT category IN ('orphan','stake','generated') GROUP BY coin_id ORDER BY coin_id DESC",
 	array(':algo'=>$algo)
 );

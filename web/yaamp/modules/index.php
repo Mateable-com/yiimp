@@ -65,7 +65,7 @@ foreach(yaamp_get_algos() as $a) {
                             <div class="col-6">
                                 <div class="bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-10 backdrop-blur">
                                     <div class="text-info small fw-bold mb-1 text-uppercase">Fee</div>
-                                    <h3 class="mb-0 fw-bold"><?=yaamp_fee($algo)?>%</h3>
+                                    <h3 class="mb-0 fw-bold">0.5%</h3>
                                 </div>
                             </div>
                         </div>

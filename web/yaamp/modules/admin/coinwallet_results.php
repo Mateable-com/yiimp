@@ -67,18 +67,22 @@ foreach($coins as $coin)
         $port_status = '<span class="text-danger"><i class="fa fa-lock me-1"></i></span>';
         
         if ($port != '-') {
-            $check_cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh ".escapeshellarg($coin->algo)." port-check ".escapeshellarg($port);
-            $check_res = trim((string) shell_exec($check_cmd));
-            
-            if ($check_res == "OPEN") {
-                $port_status = '<span class="text-success" title="Port listening!"><i class="fa fa-unlock me-1"></i></span>';
+            if ($is_online) {
+                $port_status = '<span class="text-success" title="Stratum Active!"><i class="fa fa-unlock me-1"></i></span>';
             } else {
-                // Only show the unlock link if the port is NOT listening (Red Lock)
-                $port_status = CHtml::link('<i class="fa fa-lock me-1"></i>', "/admin/unlockStratum?algo={$coin->algo}&port=$port", [
-                    'class' => 'text-danger',
-                    'title' => 'Port closed! Click to open via firewall...',
-                    'onclick' => "return confirm('Are you sure you want to open port $port for {$coin->algo} in the firewall?')"
-                ]);
+                $check_cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh ".escapeshellarg($coin->algo)." port-check ".escapeshellarg($port);
+                $check_res = trim((string) shell_exec($check_cmd));
+                
+                if ($check_res == "OPEN") {
+                    $port_status = '<span class="text-success" title="Port listening!"><i class="fa fa-unlock me-1"></i></span>';
+                } else {
+                    // Only show the unlock link if the port is NOT listening (Red Lock)
+                    $port_status = CHtml::link('<i class="fa fa-lock me-1"></i>', "/admin/unlockStratum?algo={$coin->algo}&port=$port", [
+                        'class' => 'text-danger',
+                        'title' => 'Port closed! Click to open via firewall...',
+                        'onclick' => "return confirm('Are you sure you want to open port $port for {$coin->algo} in the firewall?')"
+                    ]);
+                }
             }
         }
 

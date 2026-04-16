@@ -19,28 +19,29 @@ function yaamp_get_algo_list() {
     return $algoslist;
 }
 
-function yaamp_get_algos( $only_visible = false) {
-    
-    if ($only_visible) $storage_name = "yaamp_visible_algos";
-    else $storage_name = "yaamp_unvisible_algos";
-    
+function yaamp_get_algos($only_visible = false)
+{
+    $storage_name = $only_visible ? "yaamp_visible_algos_v2" : "yaamp_unvisible_algos_v2";
     $algos = controller()->memcache->get($storage_name);
     if($algos) return $algos;
-    
-    $algoslist = yaamp_get_algo_list();
-    if ($algoslist) {
-        foreach ($algoslist AS $algorow) {
-            if (isset($algorow['name'])) {
-                if (($only_visible) && ($algorow['visible'] == 0)) continue;
-                $algos[] = $algorow['name'];
-            }
+
+    $algos = array();
+    // Dynamically fetch algos that have enabled coins
+    $list = dbolist("SELECT DISTINCT algo FROM coins WHERE enable=1 ORDER BY algo ASC");
+    foreach($list as $item) {
+        $algos[] = $item['algo'];
+    }
+
+    if(empty($algos)) {
+        // Fallback to the algos table if no coins are enabled yet
+        $algoslist = yaamp_get_algo_list();
+        foreach ($algoslist as $algorow) {
+            if ($only_visible && isset($algorow['visible']) && $algorow['visible'] == 0) continue;
+            $algos[] = $algorow['name'];
         }
     }
-    
-    if($algos) {
-        controller()->memcache->set($storage_name, $algos);
-    }
-    
+
+    controller()->memcache->set($storage_name, $algos, 60);
     return $algos;
 }
 
@@ -317,7 +318,7 @@ function yaamp_profitability($coin)
 	$btcmhd = 20116.56761169 / $coin->difficulty * $coin->reward * $coin->price;
 	if(!$coin->auxpow && $coin->rpcencoding == 'POW')
 	{
-		$listaux = getdbolist('db_coins', "enable and visible and auto_ready and auxpow and algo='$coin->algo'");
+		$listaux = getdbolist('db_coins', "enable and auto_ready and auxpow and algo='$coin->algo'");
 		foreach($listaux as $aux)
 		{
 			if(!$aux->difficulty) continue;

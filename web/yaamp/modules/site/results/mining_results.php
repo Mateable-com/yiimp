@@ -15,9 +15,9 @@ $total_rate   = yaamp_pool_rate();
 $total_rate_d = $total_rate ? 'at <span class="badge bg-info text-dark">' . Itoa2($total_rate) . 'h/s</span>' : '';
 
 if ($algo == 'all')
-    $list = getdbolist('db_coins', "enable and visible order by auxpow asc,index_avg desc");
+    $list = getdbolist('db_coins', "enable order by auxpow asc,index_avg desc");
 else
-    $list = getdbolist('db_coins', "enable and visible and algo=:algo order by auxpow asc,index_avg desc", array(
+    $list = getdbolist('db_coins', "enable and algo=:algo order by auxpow asc,index_avg desc", array(
         ':algo' => $algo
     ));
 

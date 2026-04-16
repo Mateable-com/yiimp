@@ -39,7 +39,7 @@ $total_coins = $total_workers = $total_solo_workers = 0;
 
 foreach ($algos as $item) {
     $norm = $item[0]; $algo = $item[1];
-    $coins_count = getdbocount('db_coins', "enable and visible and auto_ready and algo=:algo", array(':algo' => $algo));
+    $coins_count = getdbocount('db_coins', "enable and auto_ready and algo=:algo", array(':algo' => $algo));
     if (!$coins_count) continue;
 
     $workers = getdbocount('db_workers', "algo=:algo and not password like '%m=solo%'", array(':algo' => $algo));
@@ -64,8 +64,11 @@ foreach ($algos as $item) {
     // Fetch local screen list once for fallback
     $screen_list = (string) shell_exec("sudo -u yiimpadmin /usr/bin/screen -list");
     $t = time() - 120; // 2 minute threshold for DB status
+    
+    // Total users for this specific algorithm
+    $users_algo = getdbocount('db_accounts', "id IN (SELECT DISTINCT userid FROM workers WHERE algo=:algo)", array(':algo' => $algo));
 
-    $list = getdbolist('db_coins', "enable and visible and auto_ready and algo=:algo order by index_avg desc", array(':algo' => $algo));
+    $list = getdbolist('db_coins', "enable and auto_ready and algo=:algo order by auxpow asc, index_avg desc", array(':algo' => $algo));
     foreach ($list as $coin) {
         $symbol = $coin->getOfficialSymbol();
 
@@ -85,17 +88,23 @@ foreach ($algos as $item) {
         $status_icon = $is_online ? 'fa-check-circle' : 'fa-times-circle';
 
         $min_payout = max(floatval(YAAMP_PAYMENTS_MINI), floatval($coin->payout_min));
+        $auxBadge = $coin->auxpow ? '<span class="badge bg-info text-dark ms-2" style="font-size: 0.5rem; vertical-align: middle;">AUX</span>' : '';
 
         echo '<tr class="small border-start border-4" style="border-left-color: '.getAlgoColors($algo).' !important;">';
-        echo '<td class="ps-5"><div class="d-flex align-items-center"><img width="18" src="'.$coin->image.'" class="me-2 rounded-circle shadow-sm"><b>'.$coin->name.'</b> <span class="text-muted ms-1">('.$symbol.')</span></div></td>';
+        echo '<td class="ps-5"><div class="d-flex align-items-center"><img width="18" src="'.$coin->image.'" class="me-2 rounded-circle shadow-sm"><b>'.$coin->name.'</b> <span class="text-muted ms-1">('.$symbol.')</span>'.$auxBadge.'</div></td>';
         echo '<td class="text-center">'.($coin->auto_exchange ? '<i class="fa fa-check-circle text-success fs-6"></i>' : '<i class="fa fa-times-circle text-danger fs-6"></i>').'</td>';
         echo '<td class="text-center fw-bold">'.$min_payout.' <small class="text-muted">'.$symbol.'</small></td>';
         echo '<td class="text-center fw-bold '.$status_color.'"><i class="fa '.$status_icon.' me-1"></i>'.$port_val.'</td>';
-        $users_total = getdbocount('db_accounts', "id IN (SELECT DISTINCT userid FROM workers)");
-        echo '<td class="text-center">'.$users_total.'</td>';
+        echo '<td class="text-center">'.$users_algo.'</td>';
         
-        $workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => ($port_db ? $port_db->pid : 0)));
-        $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => ($port_db ? $port_db->pid : 0)));
+        $workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => ($stratum_db ? $stratum_db->pid : 0)));
+        $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => ($stratum_db ? $stratum_db->pid : 0)));
+        
+        // If AUX coin, fallback to total algo workers if PID filter returns 0
+        if ($coin->auxpow && $workers_coins == 0) {
+            $workers_coins = $workers;
+            $solo_workers_coins = $solo_workers;
+        }
         echo '<td class="text-center text-muted">'.$workers_coins.' / '.$solo_workers_coins.'</td>';
         
         $pool_hash = Itoa2(yaamp_coin_rate($coin->id));

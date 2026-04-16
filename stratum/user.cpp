@@ -56,18 +56,19 @@ void db_add_aux_user(YAAMP_DB *db, YAAMP_CLIENT *client, const char *symbol_str,
 	for(CLI li = g_list_coind.first; li; li = li->next)
 	{
 		YAAMP_COIND *coind = (YAAMP_COIND *)li->data;
-		if(!strcmp(coind->symbol, symbol) || !strcmp(coind->symbol2, symbol)) {
+		if(!strcasecmp(coind->symbol, symbol) || !strcasecmp(coind->symbol2, symbol)) {
 			coinid = coind->id;
 			found = true;
 			break;
 		}
 	}
 	g_list_coind.Leave();
-	
+
 	if(!found) return;
 
-	int userid = 0;
-	db_query(db, "SELECT id FROM accounts WHERE username='%s'", address);
+	debuglog("Merged mining: %s account for %s\n", symbol, address);
+
+	int userid = 0;	db_query(db, "SELECT id FROM accounts WHERE username='%s'", address);
 	MYSQL_RES *result = mysql_store_result(&db->mysql);
 	if(result) {
 		MYSQL_ROW row = mysql_fetch_row(result);

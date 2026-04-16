@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# YiiMP Stratum Run Wrapper
-# Appends .conf to the algo name to match the config files
+source /etc/yiimpool.conf
+source $STORAGE_ROOT/yiimp/.yiimp.conf
 
-cd /var/stratum/config/ && ./run.sh "$1.conf"
+cd "$STORAGE_ROOT/yiimp/site/stratum" || exit 1
 
+exec ./stratum config/$1.conf

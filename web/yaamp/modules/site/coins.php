@@ -69,8 +69,33 @@ foreach($coins as $coin) {
     echo '        </div>';
     echo '      </div>';
 
+    // --- Community & Social Links ---
+    $socials = [
+        'link_site' => ['icon' => 'fas fa-globe', 'title' => 'Website', 'color' => 'text-primary'],
+        'link_bitcointalk' => ['icon' => 'fas fa-comment-dots', 'title' => 'Bitcointalk', 'color' => 'text-warning'],
+        'link_github' => ['icon' => 'fab fa-github', 'title' => 'GitHub', 'color' => 'text-dark'],
+        'link_discord' => ['icon' => 'fab fa-discord', 'title' => 'Discord', 'color' => 'text-indigo'],
+        'link_twitter' => ['icon' => 'fab fa-twitter', 'title' => 'Twitter', 'color' => 'text-info'],
+    ];
+    
+    $has_socials = false;
+    foreach($socials as $key => $data) { if(!empty($coin->$key)) $has_socials = true; }
+
+    if($has_socials) {
+        echo '<div class="mb-4 text-center border-top pt-3">';
+        echo '  <div class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.6rem; letter-spacing: 1px;">Community & Resources</div>';
+        echo '  <div class="d-flex justify-content-center gap-3">';
+        foreach($socials as $key => $data) {
+            if(!empty($coin->$key)) {
+                echo '<a href="'.$coin->$key.'" target="_blank" class="'.$data['color'].' fs-5 opacity-75 hover-opacity-100 transition-all" title="'.$data['title'].'"><i class="'.$data['icon'].'"></i></a>';
+            }
+        }
+        echo '  </div>';
+        echo '</div>';
+    }
+
     echo '      <div class="d-flex gap-2">';
-    echo '        <a href="/site/mining?algo='.$coin->algo.'" class="btn btn-primary flex-grow-1 rounded-pill fw-bold btn-sm shadow-sm"><i class="fa fa-tachometer-alt me-1"></i> Live Stats</a>';
+    echo '        <a href="/site/gomining?algo='.$coin->algo.'" class="btn btn-primary text-white flex-grow-1 rounded-pill fw-bold btn-sm shadow-sm d-flex align-items-center justify-content-center"><i class="fas fa-tachometer-alt me-2"></i> LIVE STATS</a>';
     if (!empty($coin->link_explorer)) {
         echo '        <a href="'.$coin->link_explorer.'" target="_blank" class="btn btn-outline-secondary rounded-circle btn-sm shadow-sm" title="Block Explorer"><i class="fa fa-search"></i></a>';
     }

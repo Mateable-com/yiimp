@@ -30,7 +30,7 @@ function getAdminWalletLinks($coin, $info=NULL, $src='wallet')
     $html = '<div class="d-flex flex-wrap gap-2 mb-4">';
     
     // Core Actions
-    $html .= CHtml::link('<i class="fa fa-edit me-1"></i>Properties', '/admin/coinupdate?id='.$coin->id, ['class'=>'btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-sm']);
+    $html .= CHtml::link('<i class="fa fa-edit me-1"></i>Properties', '/admin/coinupdate?id='.$coin->id, ['class'=>'btn btn-sm btn-primary text-white rounded-pill px-3 fw-bold shadow-sm']);
     
 	if($info) {
 		$html .= $coin->createExplorerLink('<i class="fa fa-search me-1"></i>Explorer', [], ['class'=>'btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold']);

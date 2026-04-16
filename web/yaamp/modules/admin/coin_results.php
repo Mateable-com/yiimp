@@ -96,7 +96,7 @@ foreach ($markets as $m) {
     echo '<td class="text-end pe-4"><div class="btn-group">';
     if (!empty($m->deposit_address)) {
         $name = CJavaScript::encode($m->name); $addr = CJavaScript::encode($m->deposit_address);
-        echo CHtml::link("Send", "javascript:;", ['onclick' => "return showSellAmountDialog($name, $addr, {$m->id});", 'class'=>'btn btn-xs btn-primary py-0 px-2']);
+        echo CHtml::link("Send", "javascript:;", ['onclick' => "return showSellAmountDialog($name, $addr, {$m->id});", 'class'=>'btn btn-xs btn-primary text-white py-0 px-2']);
     }
     echo '<a href="/market/update?id='.$m->id.'" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="fa fa-edit"></i></a>';
     echo '</div></td></tr>';

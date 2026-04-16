@@ -33,9 +33,9 @@ $main_ids = array();
 
 $algo = user()->getState('yaamp-algo');
 if ($algo == 'all')
-    $list = getdbolist('db_coins', "enable and visible order by index_avg desc");
+    $list = getdbolist('db_coins', "enable order by index_avg desc");
 else
-    $list = getdbolist('db_coins', "enable and visible and algo=:algo order by index_avg desc", array(
+    $list = getdbolist('db_coins', "enable and algo=:algo order by index_avg desc", array(
         ':algo' => $algo
     ));
 

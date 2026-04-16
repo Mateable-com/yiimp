@@ -382,27 +382,33 @@ class WalletRPC {
 		// Bitcoin RPC
         	switch ($method) {
 			case 'getinfo':
+				$res = false;
 				if ($this->hasGetInfo) {
 					$res = $this->rpc->__call($method,$params);
-				} else {
+				}
+				if (!$res || (isset($res['error']) && $res['error'])) {
 					$miningInfo = $this->rpc->getmininginfo();
 					if (!$miningInfo) { $res = false; break; }
+					$res = array();
 					$res["blocks"] = arraySafeVal($miningInfo,"blocks");
 					$res["difficulty"] = arraySafeVal($miningInfo,"difficulty");
 					$res["testnet"] = "main" != arraySafeVal($miningInfo,"chain");
 					$walletInfo = $this->rpc->getwalletinfo();
-					$res["walletversion"] = arraySafeVal($walletInfo,"walletversion");
-					$res["balance"] = arraySafeVal($walletInfo,"balance");
-					$res["keypoololdest"] = arraySafeVal($walletInfo,"keypoololdest");
-					$res["keypoolsize"] = arraySafeVal($walletInfo,"keypoolsize");
-					$res["paytxfee"] = arraySafeVal($walletInfo,"paytxfee");
+					if ($walletInfo) {
+						$res["walletversion"] = arraySafeVal($walletInfo,"walletversion");
+						$res["balance"] = arraySafeVal($walletInfo,"balance");
+						$res["keypoololdest"] = arraySafeVal($walletInfo,"keypoololdest");
+						$res["keypoolsize"] = arraySafeVal($walletInfo,"keypoolsize");
+						$res["paytxfee"] = arraySafeVal($walletInfo,"paytxfee");
+					}
 					$networkInfo = $this->rpc->getnetworkinfo();
-					$res["version"] = arraySafeVal($networkInfo,"version");
-					$res["protocolversion"] = arraySafeVal($networkInfo,"protocolversion");
-					$res["timeoffset"] = arraySafeVal($networkInfo,"timeoffset");
-					$res["connections"] = arraySafeVal($networkInfo,"connections");
-//                    			$res["proxy"] = arraySafeVal($networkInfo,"networks")[0]["proxy"];
-					$res["relayfee"] = arraySafeVal($networkInfo,"relayfee");
+					if ($networkInfo) {
+						$res["version"] = arraySafeVal($networkInfo,"version");
+						$res["protocolversion"] = arraySafeVal($networkInfo,"protocolversion");
+						$res["timeoffset"] = arraySafeVal($networkInfo,"timeoffset");
+						$res["connections"] = arraySafeVal($networkInfo,"connections");
+						$res["relayfee"] = arraySafeVal($networkInfo,"relayfee");
+					}
 				}
 				break;
 			default:

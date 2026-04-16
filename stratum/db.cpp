@@ -52,7 +52,7 @@ char *db_clean_string(YAAMP_DB *db, char *string)
 	for (i = 0; i < len; i++) {
 		bool isdigit = (c[i] >= '0' && c[i] <= '9');
 		bool isalpha = (c[i] >= 'a' && c[i] <= 'z') || (c[i] >= 'A' && c[i] <= 'Z');
-		bool issepch = (c[i] == '=' || c[i] == ',' || c[i] == ';' || c[i] == '.');
+		bool issepch = (c[i] == '=' || c[i] == ',' || c[i] == ';' || c[i] == '.' || c[i] == ':');
 		bool isextra = (c[i] == '/' || c[i] == '-' || c[i] == '_');
 		if (!isdigit && !isalpha && !issepch && !isextra) { c[i] = '\0'; break; }
 	}

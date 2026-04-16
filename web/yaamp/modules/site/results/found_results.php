@@ -57,7 +57,7 @@ echo '        <tbody>';
 
 $criteria = new CDbCriteria();
 $criteria->condition = "t.category NOT IN ('stake','generated')";
-$criteria->condition .= " AND IFNULL(coin.visible,1)=1"; // ifnull for rental
+// $criteria->condition .= " AND IFNULL(coin.visible,1)=1"; // ifnull for rental
 if(isset($r_algo)) {
 	$criteria->addInCondition('t.algo', $r_algo);
 }
