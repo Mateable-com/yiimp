@@ -10,8 +10,8 @@ $total_workers = getdbocount('db_workers');
 $total_coins = getdbocount('db_coins', "enable AND auto_ready");
 $total_hashrate = 0;
 
-foreach(yaamp_get_algos() as $algo) {
-    $total_hashrate += controller()->memcache->get_database_scalar("current_hashrate-$algo", 
+foreach(array_column(yaamp_get_algo_list(), 'name') as $algo) {
+    $total_hashrate += controller()->memcache->get_database_scalar("current_hashrate-$algo",
         "select hashrate from hashrate where algo=:algo order by time desc limit 1", array(':algo' => $algo));
 }
 
@@ -78,7 +78,9 @@ echo '<div class="card shadow-sm mb-4 border-0">
                     <tbody>';
 
 $algos = array();
-foreach(yaamp_get_algos() as $algo) {
+$all_algo_rows = yaamp_get_algo_list();
+$all_algo_names = array_column($all_algo_rows, 'name');
+foreach($all_algo_names as $algo) {
 	$algo_norm = yaamp_get_algo_norm($algo);
 	$t = time() - 48*60*60;
 	$price = controller()->memcache->get_database_scalar("current_price-$algo", "SELECT price FROM hashrate WHERE algo=:algo AND time>$t ORDER BY time DESC LIMIT 1", array(':algo'=>$algo));

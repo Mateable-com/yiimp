@@ -1,12 +1,5 @@
 <?php
 
-function WriteBoxHeader($title)
-{
-	echo "<div class='main-left-box'>";
-	echo "<div class='main-left-title'>$title</div>";
-	echo "<div class='main-left-inner'>";
-}
-
 $algo = user()->getState('yaamp-algo');
 
 $target = yaamp_hashrate_constant($algo);

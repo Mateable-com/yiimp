@@ -34,7 +34,7 @@ if (!empty($address) && preg_match('/[^A-Za-z0-9]/', $address)) {
                     </div>
                 <?php endif; ?>
 
-                <form action='/renting/login' method='post'>
+                <form action='/renting/login' method='post'><?php echo csrf_field(); ?>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted text-uppercase">Deposit Address</label>
                         <div class="input-group">
@@ -97,7 +97,7 @@ if (!empty($address) && preg_match('/[^A-Za-z0-9]/', $address)) {
 
 <div id="deposit-create-dialog" style='display: none; overflow: hidden;'>
     <div class="p-3">
-        <form action='/renting/create' method='post'>
+        <form action='/renting/create' method='post'><?php echo csrf_field(); ?>
             <p class="text-muted small">You are about to create a new Bitcoin deposit address. Fund this address to start renting hashpower.</p>
             <div class="alert alert-warning py-2 small">
                 <i class="fa fa-info-circle me-1"></i> Minimum deposit: 0.001 BTC

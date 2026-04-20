@@ -1,5 +1,10 @@
 <?php
 
+function csrf_field() {
+    $req = Yii::app()->request;
+    return '<input type="hidden" name="'.htmlspecialchars($req->csrfTokenName).'" value="'.htmlspecialchars($req->csrfToken).'">';
+}
+
 function yaamp_get_algo_list() {
     
     $algo_list = controller()->memcache->get("yaamp_algo_list");

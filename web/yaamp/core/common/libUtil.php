@@ -219,6 +219,8 @@ function InitMenuTabs($tabname)
 function fetch_url($url)
 {
 //	debuglog("fetch_url($url)");
+	if(!preg_match('/^https?:\/\//i', $url)) return null;
+
 	$buffer = '';
 
 	$file = @fopen($url, "r");

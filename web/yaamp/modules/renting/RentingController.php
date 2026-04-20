@@ -91,8 +91,11 @@ class RentingController extends CommonController
 		$changed = false;
 		if(isset($_POST['deposit_email']))
 		{
-			$renter->email = $_POST['deposit_email'];
-			$changed = true;
+			$email = trim($_POST['deposit_email']);
+			if(filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				$renter->email = $email;
+				$changed = true;
+			}
 		}
 
 		if(isset($_POST['deposit_password']) && !empty($_POST['deposit_password']))

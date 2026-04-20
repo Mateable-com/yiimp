@@ -139,8 +139,8 @@ foreach($coins as $coin)
 
     // Column 3: Server/RPC
 	echo '<td>';
-    echo '  <div class="fw-bold">'.$coin->rpchost.'<span class="text-muted fw-normal">:'.$coin->rpcport.'</span></div>';
-    echo '  <div class="small text-muted"><i class="fa fa-plug me-1"></i>Conns: '.($coin->connections?:'0').' ('.$coin->rpcencoding.')</div>';
+    echo '  <div class="fw-bold">'.CHtml::encode($coin->rpchost).'<span class="text-muted fw-normal">:'.CHtml::encode($coin->rpcport).'</span></div>';
+    echo '  <div class="small text-muted"><i class="fa fa-plug me-1"></i>Conns: '.($coin->connections?:'0').' ('.CHtml::encode($coin->rpcencoding).')</div>';
     echo '</td>';
 
     // Column 4: Diff / Height

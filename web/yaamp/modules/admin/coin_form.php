@@ -97,6 +97,7 @@ echo '  <div class="col-md-12 d-flex align-items-center gap-4 bg-light p-3 round
 echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Mining Enabled</label>'.CHtml::activeCheckBox($coin, 'enable', array('class'=>'form-check-input')).'</div>';
 echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Visible to Public</label>'.CHtml::activeCheckBox($coin, 'visible', array('class'=>'form-check-input')).'</div>';
 echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold text-purple">AuxPoW Support</label>'.CHtml::activeCheckBox($coin, 'auxpow', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold text-info">Multi-Algo Coin</label>'.CHtml::activeCheckBox($coin, 'multialgos', array('class'=>'form-check-input')).'<div class="form-text small">Show algo column in explorer.</div></div>';
 echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Disable Explorer</label>'.CHtml::activeCheckBox($coin, 'no_explorer', array('class'=>'form-check-input')).'</div>';
 echo '  </div>';
 echo '  <div class="col-12"><label class="form-label fw-bold small text-uppercase">Specifications / Technical Notes</label>'.CHtml::activeTextArea($coin, 'specifications', array('class'=>'form-control border-2', 'rows'=>3)).'</div>';

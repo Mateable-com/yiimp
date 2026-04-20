@@ -214,8 +214,14 @@ function versionToAlgo($coin, $version)
 	$algos['PLSR'] = array(
 		0=>'curvehash', 1=>'minotaurx',
 	);
-	
-	
+
+	// MateableCoin: algo stored in bits 8-11 using (algo_index * 2) << 8
+	// BLOCK_VERSION_ALGO mask = (15 << 8) = 0xF00
+	// Extract: (version & 0xF00) >> 8
+	$algos['MTBC'] = array(
+		0=>'scrypt', 2=>'yescrypt', 4=>'whirlpool', 6=>'ghostrider', 8=>'balloon',
+	);
+
 	$symbol = $coin->symbol;
 	if (!empty($coin->symbol2)) $symbol = $coin->symbol2;
 
@@ -229,6 +235,8 @@ function versionToAlgo($coin, $version)
 		return arraySafeVal($algos[$symbol], ($version >> 16) & 255, '');
 	else if($symbol == 'XSH')
 		return arraySafeVal($algos[$symbol], (($version-536870000) >> 11), 'scrypt');
+	else if($symbol == 'MTBC')
+		return arraySafeVal($algos[$symbol], ($version & 0xF00) >> 8, '');
 	else if (isset($algos[$symbol]))
 		return arraySafeVal($algos[$symbol], ($version >> 9) & 7, '');
 	return false;

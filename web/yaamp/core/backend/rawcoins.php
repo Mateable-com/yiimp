@@ -28,18 +28,18 @@ function updateRawcoins()
 	$markets = dbocolumn("SELECT DISTINCT name FROM markets");
 	foreach ($markets as $exchange) {
 		if (exchange_get($exchange, 'disabled')) {
-			$res = dborun("UPDATE markets SET disabled=8 WHERE name='$exchange'");
+			$res = dborun("UPDATE markets SET disabled=8 WHERE name=:name", array(':name'=>$exchange));
 			if(!$res) continue;
-			$coins = getdbolist('db_coins', "id IN (SELECT coinid FROM markets WHERE name='$exchange')");
+			$coins = getdbolist('db_coins', "id IN (SELECT coinid FROM markets WHERE name=:name)", array(':name'=>$exchange));
 			foreach($coins as $coin) {
 				// allow to track a single market on a disabled exchange (dev test)
 				if (market_get($exchange, $coin->getOfficialSymbol(), 'disabled', 1) == 0) {
-					$res -= dborun("UPDATE markets SET disabled=0 WHERE name='$exchange' AND coinid={$coin->id}");
+					$res -= dborun("UPDATE markets SET disabled=0 WHERE name=:name AND coinid=:cid", array(':name'=>$exchange, ':cid'=>$coin->id));
 				}
 			}
 			debuglog("$exchange: $res markets disabled from db settings");
 		} else {
-			$res = dborun("UPDATE markets SET disabled=0 WHERE name='$exchange' AND disabled=8");
+			$res = dborun("UPDATE markets SET disabled=0 WHERE name=:name AND disabled=8", array(':name'=>$exchange));
 			if($res) debuglog("$exchange: $res markets re-enabled from db settings");
 		}
 	}
@@ -194,7 +194,7 @@ function updateRawCoinExchange($marketname)
 					dborun("UPDATE markets SET deleted=true WHERE name='safetrade'");
 					foreach ($list as $tickers) {
 						$base = strtoupper($tickers['quote_unit']);
-						if (strtoupper($base) !== 'BTC'||strtoupper($base) !== 'USDT')
+						if ($base !== 'BTC' && $base !== 'USDT') continue;
 						$symbol = strtoupper($tickers['base_unit']);
 						updateRawCoin('safetrade', $symbol, $symbol, ($base == 'BTC')?null:$base);
 					}
@@ -412,12 +412,13 @@ function updateRawCoin($marketname, $symbol, $name='unknown', $reference_symbol 
 	foreach($list as $coin)
 	{
 		if (is_null($reference_symbol)) {
-			$sql_filter = "coinid=$coin->id and name LIKE '".$marketname."%' and base_coin is NULL";
+			$market = getdbosql('db_markets', "coinid=:cid and name LIKE :mname and base_coin is NULL",
+				array(':cid'=>$coin->id, ':mname'=>$marketname.'%'));
 		}
 		else {
-			$sql_filter = "coinid=$coin->id and name LIKE '".$marketname."%' and base_coin ='".$reference_symbol."'";
+			$market = getdbosql('db_markets', "coinid=:cid and name LIKE :mname and base_coin=:base",
+				array(':cid'=>$coin->id, ':mname'=>$marketname.'%', ':base'=>$reference_symbol));
 		}
-		$market = getdbosql('db_markets', $sql_filter);
 		if(!$market)
 		{
 			$market = new db_markets;

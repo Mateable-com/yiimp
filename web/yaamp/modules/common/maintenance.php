@@ -1,25 +1,12 @@
 
-<br>
-
-<div class="main-left-box">
-<div class="main-left-title">SITE UNDER MAINTENANCE</div>
-<div class="main-left-inner">
-
-<br>
-
-Will be back soon.<br><br>
-
-The pool server is still running normally.
-
-<br><br><br><br><br>
-
+<div class="container py-5 d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+    <div class="card shadow-lg border-0 rounded-4 text-center" style="max-width: 480px; width: 100%;">
+        <div class="card-body p-5">
+            <div class="mb-4">
+                <i class="fa fa-wrench fa-3x text-warning"></i>
+            </div>
+            <h2 class="fw-bold mb-2">Site Under Maintenance</h2>
+            <p class="text-muted mb-0">We'll be back soon. The pool server is still running normally.</p>
+        </div>
+    </div>
 </div>
-</div>
-
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-

@@ -195,7 +195,7 @@ function yaamp_withdraw() {
 <div id="order-edit-dialog" style='display: none; overflow: hidden;'></div>
 
 <div id="yaamp-withdraw" class="p-3" style='display: none; overflow: hidden;'>
-    <form action='/renting/withdraw' method='post'>
+    <form action='/renting/withdraw' method='post'><?php echo csrf_field(); ?>
         <div class="mb-3">
             <label class="form-label fw-bold small text-uppercase">Amount (BTC)</label>
             <input type="text" name="withdraw_amount" class="form-control" value='<?= $balance ?>'>

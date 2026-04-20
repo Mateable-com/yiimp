@@ -21,45 +21,53 @@ if ($algo_factor == 1000) $algo_unit = 'Gh';
 
 echo <<<end
 
-<table cellspacing=20 width=100%>
-<tr><td valign=top width=50%>
+<div class="container-fluid py-4">
+<div class="row g-4">
 
-<div id='mining_results'>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
+  <div class="col-lg-6">
 
-<div id='main_miners_results'>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
+    <div id='mining_results' class="mb-4">
+      <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+    </div>
 
-<div class="main-left-box">
-<div class="main-left-title">Last 24 Hours Hashrate ($algo)</div>
-<div class="main-left-inner"><br>
-<div id='graph_results_hashrate' style='height: $height;'></div><br>
-</div></div><br>
+    <div id='main_miners_results' class="mb-4">
+      <div class="text-center py-3"><div class="spinner-border text-secondary" role="status"></div></div>
+    </div>
 
-<div class="main-left-box">
-<div class="main-left-title">Last 24 Hours Estimate ($algo)</div>
-<div class="main-left-inner"><br>
-<div id='graph_results_price' style='height: $height;'></div><br>
-</div></div><br>
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-dark text-white py-3">
+        <h6 class="mb-0 fw-bold"><i class="fa fa-tachometer-alt me-2 text-info"></i>Last 24 Hours Hashrate ($algo)</h6>
+      </div>
+      <div class="card-body">
+        <div id='graph_results_hashrate' style='height:$height;'></div>
+      </div>
+    </div>
 
-</td><td valign=top>
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-dark text-white py-3">
+        <h6 class="mb-0 fw-bold"><i class="fa fa-chart-bar me-2 text-warning"></i>Last 24 Hours Estimate ($algo)</h6>
+      </div>
+      <div class="card-body">
+        <div id='graph_results_price' style='height:$height;'></div>
+      </div>
+    </div>
 
-<div id='pool_current_results'>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
+  </div>
 
-<div id='main_wallet_results'>
-<br><br><br><br><br><br><br><br><br><br>
-</div>
+  <div class="col-lg-6">
 
-</td></tr></table>
+    <div id='pool_current_results' class="mb-4">
+      <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+    </div>
 
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
+    <div id='main_wallet_results'>
+      <div class="text-center py-5"><div class="spinner-border text-secondary" role="status"></div></div>
+    </div>
+
+  </div>
+
+</div><!-- end row -->
+</div><!-- end container -->
 
 <script>
 

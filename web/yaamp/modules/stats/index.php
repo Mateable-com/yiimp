@@ -87,92 +87,91 @@ $dtMax3 = $dtMin3 + (8*4) * $days;
 
 echo <<<end
 
-<div id='resume_update_button' style='color: #444; background-color: #ffd; border: 1px solid #eea;
-	padding: 10px; margin-left: 20px; margin-right: 20px; margin-top: 15px; cursor: pointer; display: none;'
-	onclick='auto_page_resume();' align=center>
-	<b>Auto refresh is paused - Click to resume</b></div>
+<div class="container-fluid py-4">
 
-<div align=right>
-Select Algo: <select id='algo_select'>$string</select>&nbsp;
+<div id='resume_update_button' class="alert alert-warning text-center fw-bold d-none" role="alert" onclick='auto_page_resume();' style="cursor:pointer;">
+  <i class="fa fa-pause-circle me-2"></i>Auto refresh is paused — Click to resume
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="fa fa-chart-line me-2 text-primary"></i>Pool Statistics</h4>
+  <div class="d-flex align-items-center gap-2">
+    <label class="fw-bold small text-muted mb-0">Algo:</label>
+    <select id='algo_select' class="form-select form-select-sm" style="width:auto;">$string</select>
+  </div>
 </div>
 
 <script>
-
-$('#algo_select').change(function(event)
-{
-	var algo = $('#algo_select').val();
-	window.location.href = '/site/algo?algo='+algo+'&r=/stats';
+$('#algo_select').change(function(event) {
+  var algo = $('#algo_select').val();
+  window.location.href = '/site/algo?algo='+algo+'&r=/stats';
 });
-
 </script>
 
-<table width=100%><tr><td valign=top width=33%>
+<div class="row g-4">
 
-<div class="main-left-box">
-<div class="main-left-title">Last 48 Hours</div>
-<div class="main-left-inner">
+<div class="col-lg-4">
+  <div class="card shadow-sm border-0 h-100">
+    <div class="card-header bg-dark text-white py-3">
+      <h6 class="mb-0 fw-bold"><i class="fa fa-clock me-2 text-info"></i>Last 48 Hours</h6>
+    </div>
+    <div class="card-body">
+      <ul class="list-unstyled mb-3 small">
+        <li class="mb-1"><span class="text-muted">Avg Hashrate:</span> <b>{$hashrate1}h/s</b></li>
+        <li class="mb-1"><span class="text-muted">BTC Value:</span> <b>$total1</b></li>
+        <li><span class="text-muted">BTC/{$algo_unit}/d:</span> <b>$btcmhday1</b></li>
+      </ul>
+      <div id='graph_results_1' style='height:$height;'></div>
+      <hr class="my-3">
+      <div id='graph_results_2' style='height:$height;'></div>
+      <hr class="my-3">
+      <div id='graph_results_3' style='height:$height;'></div>
+    </div>
+  </div>
+</div>
 
-<ul>
-<li>Average Hashrate: <b>{$hashrate1}h/s</b></li>
-<li>BTC Value: <b>$total1</b></li>
-<li>BTC/{$algo_unit}/d: <b>$btcmhday1</b></li>
-</ul>
+<div class="col-lg-4">
+  <div class="card shadow-sm border-0 h-100">
+    <div class="card-header bg-dark text-white py-3">
+      <h6 class="mb-0 fw-bold"><i class="fa fa-calendar-week me-2 text-warning"></i>Last 7 Days</h6>
+    </div>
+    <div class="card-body">
+      <ul class="list-unstyled mb-3 small">
+        <li class="mb-1"><span class="text-muted">Avg Hashrate:</span> <b>{$hashrate2}h/s</b></li>
+        <li class="mb-1"><span class="text-muted">BTC Value:</span> <b>$total2</b></li>
+        <li><span class="text-muted">BTC/{$algo_unit}/d:</span> <b>$btcmhday2</b></li>
+      </ul>
+      <div id='graph_results_4' style='height:$height;'></div>
+      <hr class="my-3">
+      <div id='graph_results_5' style='height:$height;'></div>
+      <hr class="my-3">
+      <div id='graph_results_6' style='height:$height;'></div>
+    </div>
+  </div>
+</div>
 
-<br>
-<div id='graph_results_1' style='height: $height;'></div><br><br>
-<div id='graph_results_2' style='height: $height;'></div><br><br>
-<div id='graph_results_3' style='height: $height;'></div><br><br>
+<div class="col-lg-4">
+  <div class="card shadow-sm border-0 h-100">
+    <div class="card-header bg-dark text-white py-3">
+      <h6 class="mb-0 fw-bold"><i class="fa fa-calendar-alt me-2 text-success"></i>Last 30 Days</h6>
+    </div>
+    <div class="card-body">
+      <ul class="list-unstyled mb-3 small">
+        <li class="mb-1"><span class="text-muted">Avg Hashrate:</span> <b>{$hashrate3}h/s</b></li>
+        <li class="mb-1"><span class="text-muted">BTC Value:</span> <b>$total3</b></li>
+        <li><span class="text-muted">BTC/{$algo_unit}/d:</span> <b>$btcmhday3</b></li>
+      </ul>
+      <div id='graph_results_7' style='height:$height;'></div>
+      <hr class="my-3">
+      <div id='graph_results_8' style='height:$height;'></div>
+      <hr class="my-3">
+      <div id='graph_results_9' style='height:$height;'></div>
+    </div>
+  </div>
+</div>
 
-</div></div><br>
-
-</td>
-<td></td>
-<td valign=top width=33%>
-
-<div class="main-left-box">
-<div class="main-left-title">Last 7 Days</div>
-<div class="main-left-inner">
-
-<ul>
-<li>Average Hashrate: <b>{$hashrate2}h/s</b></li>
-<li>BTC Value: <b>$total2</b></li>
-<li>BTC/{$algo_unit}/d: <b>$btcmhday2</b></li>
-</ul>
-
-<br>
-<div id='graph_results_4' style='height: $height;'></div><br><br>
-<div id='graph_results_5' style='height: $height;'></div><br><br>
-<div id='graph_results_6' style='height: $height;'></div><br><br>
-
-</div></div><br>
-
-</td>
-<td></td>
-<td valign=top width=33%>
-
-<div class="main-left-box">
-<div class="main-left-title">Last 30 Days</div>
-<div class="main-left-inner">
-
-<ul>
-<li>Average Hashrate: <b>{$hashrate3}h/s</b></li>
-<li>BTC Value: <b>$total3</b></li>
-<li>BTC/{$algo_unit}/d: <b>$btcmhday3</b></li>
-</ul>
-
-<br>
-<div id='graph_results_7' style='height: $height;'></div><br><br>
-<div id='graph_results_8' style='height: $height;'></div><br><br>
-<div id='graph_results_9' style='height: $height;'></div><br><br>
-
-</div></div><br>
-
-</td></tr></table>
-
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
+</div><!-- end row -->
+</div><!-- end container -->
 
 <script type="text/javascript">
 

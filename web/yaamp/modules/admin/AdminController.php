@@ -780,7 +780,7 @@ class AdminController extends CommonController {
 	public function actionCoinBulkDelete()
 	{
 		if(!$this->admin) return;
-		$ids = isset($_POST['coin_ids']) ? $_POST['coin_ids'] : array();
+		$ids = isset($_POST['coin_ids']) && is_array($_POST['coin_ids']) ? $_POST['coin_ids'] : array();
 		foreach($ids as $id) {
 			$id = (int)$id;
 			if(!$id) continue;
@@ -1007,15 +1007,17 @@ class AdminController extends CommonController {
 	{
 		if(!$this->admin) return;
 		$algo = getparam('algo');
-		if($algo) {
-			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $algo start 2>&1";
+		$db_algo = $algo ? getdbosql('db_algos', "name=:algo", array(':algo'=>$algo)) : null;
+		if($db_algo) {
+			$safe_algo = escapeshellarg($algo);
+			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $safe_algo start 2>&1";
 			exec($cmd, $output, $result);
-			
-			$logfile = "/tmp/stratum_ctl_$algo.log";
+
+			$logfile = "/tmp/stratum_ctl_".preg_replace('/[^a-z0-9_]/', '', $algo).".log";
 			$log = file_exists($logfile) ? file_get_contents($logfile) : implode(' ', $output);
-			
-			if($result == 0) user()->setFlash('message', "Stratum for $algo: $log");
-			else user()->setFlash('error', "Failed to start stratum for $algo. Log: $log");
+
+			if($result == 0) user()->setFlash('message', "Stratum for ".CHtml::encode($algo).": $log");
+			else user()->setFlash('error', "Failed to start stratum for ".CHtml::encode($algo).". Log: $log");
 		}
 		$this->goback();
 	}
@@ -1024,14 +1026,16 @@ class AdminController extends CommonController {
 	{
 		if(!$this->admin) return;
 		$algo = getparam('algo');
-		if($algo) {
-			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $algo stop 2>&1";
+		$db_algo = $algo ? getdbosql('db_algos', "name=:algo", array(':algo'=>$algo)) : null;
+		if($db_algo) {
+			$safe_algo = escapeshellarg($algo);
+			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $safe_algo stop 2>&1";
 			exec($cmd, $output, $result);
-			
-			$logfile = "/tmp/stratum_ctl_$algo.log";
+
+			$logfile = "/tmp/stratum_ctl_".preg_replace('/[^a-z0-9_]/', '', $algo).".log";
 			$log = file_exists($logfile) ? file_get_contents($logfile) : "Stopped.";
-			
-			user()->setFlash('message', "Stratum for $algo: $log");
+
+			user()->setFlash('message', "Stratum for ".CHtml::encode($algo).": $log");
 		}
 		$this->goback();
 	}
@@ -1040,16 +1044,19 @@ class AdminController extends CommonController {
 	{
 		if(!$this->admin) return;
 		$algo = getparam('algo');
-		$port = getparam('port');
-		if($algo && $port) {
-			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $algo unlock $port 2>&1";
+		$port = (int)getparam('port');
+		$db_algo = $algo ? getdbosql('db_algos', "name=:algo", array(':algo'=>$algo)) : null;
+		if($db_algo && $port > 0 && $port <= 65535) {
+			$safe_algo = escapeshellarg($algo);
+			$safe_port = escapeshellarg((string)$port);
+			$cmd = "sudo -u yiimpadmin ".YIIMP_STRATUM_CTRL_DIR."/stratum_ctl.sh $safe_algo unlock $safe_port 2>&1";
 			exec($cmd, $output, $result);
-			
-			$logfile = "/tmp/stratum_ctl_$algo.log";
+
+			$logfile = "/tmp/stratum_ctl_".preg_replace('/[^a-z0-9_]/', '', $algo).".log";
 			$log = file_exists($logfile) ? file_get_contents($logfile) : implode(' ', $output);
-			
-			if($result == 0) user()->setFlash('message', "Port $port unlocked for $algo: $log");
-			else user()->setFlash('error', "Failed to unlock port $port for $algo. Log: $log");
+
+			if($result == 0) user()->setFlash('message', "Port $port unlocked for ".CHtml::encode($algo).": $log");
+			else user()->setFlash('error', "Failed to unlock port $port for ".CHtml::encode($algo).". Log: $log");
 		}
 		$this->goback();
 	}

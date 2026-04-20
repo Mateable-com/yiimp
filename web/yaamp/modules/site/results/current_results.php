@@ -73,7 +73,7 @@ foreach ($algos as $item) {
         $symbol = $coin->getOfficialSymbol();
 
         // Check Database first (Supports Remote Servers)
-        $stratum_db = getdbosql('db_stratums', "algo=:algo and (symbol=:symbol OR symbol='NULL') AND time > $t", array(':algo' => $algo, ':symbol' => $coin->symbol));
+        $stratum_db = getdbosql('db_stratums', "algo=:algo and (symbol=:symbol OR symbol IS NULL) AND time > $t", array(':algo' => $algo, ':symbol' => $coin->symbol));
         $is_online = (bool) $stratum_db;
 
         // Local Screen Check as Fallback

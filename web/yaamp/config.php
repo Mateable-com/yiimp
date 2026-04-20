@@ -53,6 +53,10 @@ return array(
 			'loginUrl'=>array('site/login'),
 		),
 
+		'request'=>array(
+			'enableCsrfValidation'=>true,
+		),
+
 		'db'=>array(
 			'class'=>'CDbConnection',
 			'connectionString'=>"mysql:host=".YAAMP_DBHOST.";dbname=".YAAMP_DBNAME,

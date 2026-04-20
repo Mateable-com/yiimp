@@ -264,6 +264,13 @@ class ApiController extends CommonController
             return;
         }
         $wallet = getparam('address');
+        if (empty($wallet)) return;
+
+        $ip = arraySafeVal($_SERVER, 'REMOTE_ADDR', '');
+        if (!LimitRequest("api_wallet_$ip", 20, 60)) {
+            header('HTTP/1.0 429 Too Many Requests');
+            return;
+        }
 
         $user = getuserparam($wallet);
         if (!$user || $user->is_locked)

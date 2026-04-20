@@ -39,7 +39,7 @@ $coin_scheme = $coin ? strtolower($coin->name) : 'bitcoin';
                     <p class="small mt-2 mb-0">Minimum deposit: 0.001 <?= $coin_symbol ?>. Save this address to login next time.</p>
                 </div>
 
-                <form action='/renting?address=<?= $renter->address ?>' method='post'>
+                <form action='/renting?address=<?= $renter->address ?>' method='post'><?php echo csrf_field(); ?>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label small fw-bold text-muted text-uppercase">Email Address</label>
