@@ -21,7 +21,7 @@ class CronjobController extends CommonController
 		$e = explode(', ', $m[1]);
 
 		$webserver = 'nginx';
-		$res = exec("pgrep $webserver");
+		$res = exec("pgrep " . escapeshellarg($webserver));
 		$webserver_running = !empty($res);
 
 		if($e[0] > 4 && $webserver_running)

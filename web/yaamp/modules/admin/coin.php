@@ -26,12 +26,12 @@ echo getAdminSideBarLinks();
 
 echo '<div class="card shadow-lg border-0 rounded-4 overflow-hidden mb-4">';
 echo '  <div class="card-header bg-dark text-white p-4 d-flex align-items-center border-0">';
-echo '    <img src="'.$coin->image.'" width="48" class="me-4 shadow-sm rounded-circle p-1 bg-white">';
+echo '    <img src="'.htmlspecialchars($coin->image).'" width="48" class="me-4 shadow-sm rounded-circle p-1 bg-white">';
 echo '    <div class="flex-grow-1">';
-echo '      <h3 class="mb-0 fw-bold">'.$coin->name.' <span class="text-primary">('.$coin->symbol.')</span></h3>';
+echo '      <h3 class="mb-0 fw-bold">'.htmlspecialchars($coin->name).' <span class="text-primary">('.htmlspecialchars($coin->symbol).')</span></h3>';
 echo '      <div class="d-flex gap-3 small text-muted mt-1">';
-echo '        <span><i class="fa fa-microchip me-1"></i>Algo: <b>'.$coin->algo.'</b></span>';
-echo '        <span><i class="fa fa-plug me-1"></i>RPC: <b>'.$coin->rpchost.':'.$coin->rpcport.'</b></span>';
+echo '        <span><i class="fa fa-microchip me-1"></i>Algo: <b>'.htmlspecialchars($coin->algo).'</b></span>';
+echo '        <span><i class="fa fa-plug me-1"></i>RPC: <b>'.htmlspecialchars($coin->rpchost).':'.htmlspecialchars($coin->rpcport).'</b></span>';
 echo '        <span><i class="fa fa-code-branch me-1"></i>Version: <b>'.formatWalletVersion($coin).'</b></span>';
 echo '      </div>';
 echo '    </div>';
