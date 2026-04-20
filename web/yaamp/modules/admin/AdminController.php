@@ -18,6 +18,18 @@ class AdminController extends CommonController {
 		$this->renderPartial('common_results');
 	}
 
+	public function actionHealth()
+	{
+		if(!$this->admin) $this->redirect("/site/mining");
+		$this->render('health');
+	}
+
+	public function actionHealth_results()
+	{
+		if(!$this->admin) return;
+		$this->renderPartial('health_results');
+	}
+
 	///////////////////////////////////////////////////
 
 	public function actionLogin()

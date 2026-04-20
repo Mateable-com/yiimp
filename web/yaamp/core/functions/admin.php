@@ -14,6 +14,7 @@ function getAdminSideBarLinks()
         ['url' => '/admin/payments', 'name' => 'Payments', 'icon' => 'money-bill-wave'],
         ['url' => '/admin/exchange', 'name' => 'Exchanges', 'icon' => 'exchange-alt'],
         ['url' => '/admin/monsters', 'name' => 'Monsters', 'icon' => 'ghost'],
+        ['url' => '/admin/health', 'name' => 'Health', 'icon' => 'heartbeat'],
     ];
 
     foreach ($items as $item) {

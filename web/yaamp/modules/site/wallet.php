@@ -115,6 +115,7 @@ END;
                 </div>
             </div>
 
+            <div id='main_workers_results' class="mb-4"></div>
             <div id='main_graphs_results' class="mb-4"></div>
             <div id='main_miners_results' class="mb-4"></div>
             <div id='main_found_results' class="mb-4"></div>
@@ -203,11 +204,12 @@ function page_refresh()
 	if('$username' != '')
 	{
 		main_wallet_refresh();
+		main_workers_refresh();
 		main_miners_refresh();
 
 		main_graphs_refresh();
 		main_title_refresh();
-		
+
 		main_found_refresh();
 	}
 }
@@ -245,6 +247,19 @@ function main_wallet_refresh_details()
 {
 	var url = "/site/wallet_results?address=$username&showdetails=1";
 	$.get(url, '', main_wallet_ready);
+}
+
+////////////////////////////////////////////////////
+
+function main_workers_ready(data)
+{
+	$('#main_workers_results').html(data);
+}
+
+function main_workers_refresh()
+{
+	var url = "/site/wallet_workers_results?address=$username";
+	$.get(url, '', main_workers_ready);
 }
 
 ////////////////////////////////////////////////////

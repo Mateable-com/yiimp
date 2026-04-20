@@ -1,12 +1,5 @@
 <?php
 
-function WriteBoxHeader($title)
-{
-    echo '<div class="card mb-4 shadow-sm">';
-    echo '  <div class="card-header bg-dark text-white fw-bold py-2"><i class="fa fa-microchip me-2"></i>' . $title . '</div>';
-    echo '  <div class="card-body p-0 table-responsive">';
-}
-
 $showrental = (bool) YAAMP_RENTAL;
 
 $algo = user()->getState('yaamp-algo');
@@ -41,7 +34,9 @@ else
 
 $coin_count  = $count > 1 ? "on $count wallets" : 'on a single wallet';
 $miner_count = $worker > 1 ? '<span class="badge bg-primary ms-1">' . $worker . ' miners</span>' : '<span class="badge bg-primary ms-1">' . $worker . ' miner</span>';
-WriteBoxHeader("Mining $coin_count $total_rate_d $miner_count");
+echo '<div class="card mb-4 shadow-sm">';
+echo '  <div class="card-header bg-dark text-white fw-bold py-2"><i class="fa fa-microchip me-2"></i>Mining '.$coin_count.' '.$total_rate_d.' '.$miner_count.'</div>';
+echo '  <div class="card-body p-0 table-responsive">';
 
 echo '<table class="table table-hover table-sm mb-0" id="maintable3">';
 echo <<<END

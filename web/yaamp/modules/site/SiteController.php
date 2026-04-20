@@ -130,6 +130,11 @@ class SiteController extends CommonController
 		$this->renderPartial('results/wallet_results');
 	}
 
+	public function actionWallet_workers_results()
+	{
+		$this->renderPartial('results/wallet_workers_results');
+	}
+
 	public function actionWallet_miners_results()
 	{
 		$this->renderPartial('results/wallet_miners_results');
