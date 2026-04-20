@@ -760,6 +760,38 @@ class AdminController extends CommonController {
 	//	$this->goback();
 	}
 
+	//////////////////////////////////////////////////////////////////////////////////////
+
+	public function actionCoinDelete()
+	{
+		if(!$this->admin) return;
+		$coin = getdbo('db_coins', getiparam('id'));
+		if($coin) {
+			dborun("DELETE FROM markets WHERE coinid={$coin->id}");
+			dborun("DELETE FROM earnings WHERE coinid={$coin->id}");
+			dborun("DELETE FROM blocks WHERE coin_id={$coin->id}");
+			$coin->delete();
+		}
+		$this->redirect('/admin/coinwallets');
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////
+
+	public function actionCoinBulkDelete()
+	{
+		if(!$this->admin) return;
+		$ids = isset($_POST['coin_ids']) ? $_POST['coin_ids'] : array();
+		foreach($ids as $id) {
+			$id = (int)$id;
+			if(!$id) continue;
+			dborun("DELETE FROM markets WHERE coinid=$id");
+			dborun("DELETE FROM earnings WHERE coinid=$id");
+			dborun("DELETE FROM blocks WHERE coin_id=$id");
+			dborun("DELETE FROM coins WHERE id=$id");
+		}
+		$this->redirect('/admin/coinwallets');
+	}
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 
 	public function actionBanUser()

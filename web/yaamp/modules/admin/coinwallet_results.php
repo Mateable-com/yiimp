@@ -8,26 +8,31 @@ function valuetocell($amount) {
 
 $server = getparam('server');
 if(!empty($server)) {
-	$coins = getdbolist('db_coins', "(installed OR enable OR watch OR symbol='BTC') AND rpchost=:server ORDER BY algo, index_avg DESC",
+	$coins = getdbolist('db_coins', "rpchost=:server ORDER BY algo, index_avg DESC",
 		array(':server'=>$server));
 }
 else
-	$coins = getdbolist('db_coins', "(installed OR enable OR watch OR symbol='BTC') ORDER BY algo, index_avg DESC");
+	$coins = getdbolist('db_coins', "1 ORDER BY algo, index_avg DESC");
 
 $mining = getdbosql('db_mining');
 $algos_shown = [];
 
+echo '<form id="bulk-delete-form" method="post" action="/admin/coinbulkdelete">';
 echo '<div class="card shadow-sm border-0">';
 echo '  <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">';
 echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-wallet me-2 text-primary"></i>Wallet Management</h5>';
-echo '    <span class="badge bg-primary">Total: '.count($coins).'</span>';
+echo '    <div class="d-flex align-items-center gap-2">';
+echo '      <span class="badge bg-primary">Total: '.count($coins).'</span>';
+echo '      <button type="button" id="bulk-delete-btn" class="btn btn-danger btn-sm rounded-pill px-3 d-none" onclick="bulkDelete()"><i class="fa fa-trash me-1"></i>Delete Selected (<span id="selected-count">0</span>)</button>';
+echo '    </div>';
 echo '  </div>';
 echo '  <div class="card-body p-0">';
 echo '    <div class="table-responsive">';
 echo '      <table class="table table-hover align-middle mb-0 small" id="maintable">';
 echo '        <thead class="table-light text-muted text-uppercase" style="font-size: 0.7rem;">';
 echo '          <tr>';
-echo '            <th class="ps-4">Coin</th>';
+echo '            <th class="ps-3"><input type="checkbox" id="select-all" class="form-check-input" title="Select All"></th>';
+echo '            <th class="ps-2">Coin</th>';
 echo '            <th>Status</th>';
 echo '            <th>Server/RPC</th>';
 echo '            <th class="text-end">Diff / Height</th>';
@@ -100,9 +105,12 @@ foreach($coins as $coin)
     $st_title = $coin->enable ? 'Enabled' : 'Disabled';
     
 	echo '<tr>';
-    
+
+    // Checkbox column
+    echo '<td class="ps-3"><input type="checkbox" name="coin_ids[]" value="'.$coin->id.'" class="form-check-input coin-checkbox"></td>';
+
     // Column 1: Coin Info
-	echo '<td class="ps-4">';
+	echo '<td class="ps-2">';
     echo '  <div class="d-flex align-items-center">';
     echo '    <img src="'.$coin->image.'" width="32" class="me-3 shadow-sm rounded-circle p-1 bg-white">';
     echo '    <div>';
@@ -179,6 +187,7 @@ foreach($coins as $coin)
     echo '    <a href="/admin/coin?id='.$coin->id.'" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Details"><i class="fa fa-eye"></i></a>';
     echo '    <a href="/admin/coinupdate?id='.$coin->id.'" class="btn btn-sm btn-outline-primary py-0 px-2" title="Edit"><i class="fa fa-edit"></i></a>';
     echo '    <a href="/admin/coinconsole?id='.$coin->id.'" class="btn btn-sm btn-outline-dark py-0 px-2" title="Console"><i class="fa fa-terminal"></i></a>';
+    echo '    <a href="/admin/coindelete?id='.$coin->id.'" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete Coin" onclick="return confirm(\'Delete '.$coin->symbol.' and all its data? This cannot be undone.\')"><i class="fa fa-trash"></i></a>';
     echo '  </div>';
 	echo '</td>';
 
@@ -190,5 +199,31 @@ echo '      </table>';
 echo '    </div>';
 echo '  </div>';
 echo '</div>';
+echo '</form>';
 
 ?>
+<script>
+document.getElementById('select-all').addEventListener('change', function() {
+    var checkboxes = document.querySelectorAll('.coin-checkbox');
+    checkboxes.forEach(function(cb) { cb.checked = this.checked; }, this);
+    updateBulkBtn();
+});
+
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('coin-checkbox')) updateBulkBtn();
+});
+
+function updateBulkBtn() {
+    var checked = document.querySelectorAll('.coin-checkbox:checked').length;
+    var btn = document.getElementById('bulk-delete-btn');
+    document.getElementById('selected-count').textContent = checked;
+    btn.classList.toggle('d-none', checked === 0);
+}
+
+function bulkDelete() {
+    var count = document.querySelectorAll('.coin-checkbox:checked').length;
+    if (confirm('Delete ' + count + ' coin(s) and all their data? This cannot be undone.')) {
+        document.getElementById('bulk-delete-form').submit();
+    }
+}
+</script>

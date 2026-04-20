@@ -71,11 +71,33 @@ $(function()
 var main_delay=30000;
 var main_timeout;
 var lastSearch = false;
+var checkedIds = [];
+
+function saveChecked()
+{
+	checkedIds = [];
+	$('.coin-checkbox:checked').each(function() {
+		checkedIds.push($(this).val());
+	});
+}
+
+function restoreChecked()
+{
+	if (checkedIds.length === 0) return;
+	$('.coin-checkbox').each(function() {
+		if (checkedIds.indexOf($(this).val()) !== -1) {
+			$(this).prop('checked', true);
+		}
+	});
+	if (typeof updateBulkBtn === 'function') updateBulkBtn();
+}
 
 function main_ready(data)
 {
+	saveChecked();
 	$('#main_results').html(data);
-	
+	restoreChecked();
+
 	if (lastSearch !== false) {
 		$('input.search').val(lastSearch);
 		$('table.dataGrid').trigger('search');
