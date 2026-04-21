@@ -57,7 +57,7 @@ foreach($earnings as $earning)
     echo '</td>';
 
 	echo '<td>';
-    echo '  <div class="fw-bold font-monospace" style="font-size: 0.8rem;">'.CHtml::link(substr($user->username,0,20).'...', '/?address='.$user->username, ['class'=>'text-primary text-decoration-none', 'target'=>'_blank']).'</div>';
+    echo '  <div class="fw-bold font-monospace" style="font-size: 0.8rem;">'.CHtml::link(htmlspecialchars(substr($user->username,0,20)).'...', '/?address='.urlencode($user->username), ['class'=>'text-primary text-decoration-none', 'target'=>'_blank']).'</div>';
     echo '</td>';
 
 	echo '<td class="text-end fw-bold">'.bitcoinvaluetoa($earning->amount).'</td>';

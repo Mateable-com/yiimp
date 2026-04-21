@@ -4,9 +4,6 @@ $showrental = (bool) YAAMP_RENTAL;
 
 $algo = user()->getState('yaamp-algo');
 
-$total_rate   = yaamp_pool_rate();
-$total_rate_d = $total_rate ? 'at <span class="badge bg-info text-dark">' . Itoa2($total_rate) . 'h/s</span>' : '';
-
 if ($algo == 'all')
     $list = getdbolist('db_coins', "enable order by auxpow asc,index_avg desc");
 else
@@ -15,6 +12,19 @@ else
     ));
 
 $count = count($list);
+
+// Count active non-aux coins and merged aux coins separately
+$active_wallet_count = 0;
+$aux_count = 0;
+$total_rate = 0;
+foreach ($list as $c) {
+    if ($c->auxpow) { $aux_count++; continue; }
+    $r = yaamp_coin_rate($c->id);
+    if ($r > 0) { $active_wallet_count++; $total_rate += $r; }
+}
+if (!$active_wallet_count) $active_wallet_count = $count - $aux_count;
+$total_rate_d = $total_rate ? 'at <span class="badge bg-info text-dark">' . Itoa2($total_rate) . 'h/s</span>' : '';
+$merged_d = $aux_count > 0 ? ' + <span class="badge bg-info bg-opacity-75 text-dark">' . $aux_count . ' merged</span>' : '';
 
 if ($algo == 'all')
     $worker = getdbocount('db_workers');
@@ -32,7 +42,7 @@ else
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-$coin_count  = $count > 1 ? "on $count wallets" : 'on a single wallet';
+$coin_count  = $active_wallet_count > 1 ? "on $active_wallet_count wallets$merged_d" : "on a single wallet$merged_d";
 $miner_count = $worker > 1 ? '<span class="badge bg-primary ms-1">' . $worker . ' miners</span>' : '<span class="badge bg-primary ms-1">' . $worker . ' miner</span>';
 echo '<div class="card mb-4 shadow-sm">';
 echo '  <div class="card-header bg-dark text-white fw-bold py-2"><i class="fa fa-microchip me-2"></i>Mining '.$coin_count.' '.$total_rate_d.' '.$miner_count.'</div>';
@@ -72,6 +82,9 @@ if ($algo != 'all' && $showrental) {
 
 $separate_aux = 0;
 foreach ($list as $coin) {
+    // Hide non-aux coins with no active hashrate
+    if (!$coin->auxpow && !yaamp_coin_rate($coin->id)) continue;
+
     if($coin->auxpow && !$separate_aux) {
         $separate_aux = 1;
         echo "<tr class='table-info text-center'><td colspan='8' class='fw-bold small text-uppercase py-1'>merged mined coins</td></tr>";
@@ -179,7 +192,7 @@ foreach ($list as $coin) {
     echo '<td class="text-end small" data="' . $coin->difficulty . '" title="' . $title . '">' . $difficulty . '</td>';
 
     if (!empty($coin->errors))
-        echo "<td class='text-end small text-danger fw-bold' title='$coin->errors'>$height</td>";
+        echo '<td class="text-end small text-danger fw-bold" title="'.htmlspecialchars($coin->errors).'">'.$height.'</td>';
     else
         echo "<td class='text-end small'>$height</td>";
 

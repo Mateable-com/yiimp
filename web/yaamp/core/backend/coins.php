@@ -51,8 +51,24 @@ function BackendCoinsUpdate()
 				$coin->enable = false;
 				$coin->connections = 0;
 				$coin->save();
+				send_email_alert("coin_offline_{$coin->symbol}",
+					"[Pool Alert] {$coin->symbol} wallet offline",
+					"{$coin->symbol} ({$coin->name}) wallet stopped responding and has been disabled.\n".
+					"Error: {$remote->error}\nTime: ".date('Y-m-d H:i:s T')."\n\n".
+					"Login to the admin panel to re-enable after the wallet is restored.",
+					60
+				);
 				continue;
 			}
+		}
+
+		// notify recovery if coin was previously offline (connections was 0 and now we have info)
+		if ($coin->connections == 0 && !empty($info)) {
+			send_email_alert("coin_recovery_{$coin->symbol}",
+				"[Pool Alert] {$coin->symbol} wallet recovered",
+				"{$coin->symbol} ({$coin->name}) wallet is responding again.\nTime: ".date('Y-m-d H:i:s T'),
+				60
+			);
 		}
 
 		// auto-enable if auto_ready is set
@@ -86,8 +102,28 @@ function BackendCoinsUpdate()
 		if (strstr($coin->errors,'check your network connection') !== false) $coin->errors = '';
 
 		$coin->txfee = isset($info['paytxfee'])? $info['paytxfee']: '';
+		$prev_connections = (int) $coin->connections;
 		$coin->connections = isset($info['connections'])? $info['connections']: '';
 		$coin->multialgos = (int) isset($info['pow_algo_id']);
+
+		// Auto-disable coin if it has had 0 peers for more than 30 minutes
+		if ((int)$coin->connections === 0 && $prev_connections === 0 && $coin->enable) {
+			$zero_since = controller()->memcache->get("coin_zeropeer_since_{$coin->id}");
+			if (!$zero_since) {
+				controller()->memcache->set("coin_zeropeer_since_{$coin->id}", time(), 3600);
+			} elseif (time() - $zero_since > 1800) {
+				debuglog("{$coin->symbol} disabled: 0 peers for >30 minutes");
+				$coin->enable = false;
+				send_email_alert("coin_zeropeer_{$coin->symbol}",
+					"[Pool Alert] {$coin->symbol} auto-disabled (0 peers)",
+					"{$coin->symbol} ({$coin->name}) has had 0 peers for over 30 minutes and has been automatically disabled.\n".
+					"Time: ".date('Y-m-d H:i:s T')."\n\nRe-enable it from the admin panel once the wallet reconnects.",
+					120
+				);
+			}
+		} elseif ((int)$coin->connections > 0) {
+			controller()->memcache->set("coin_zeropeer_since_{$coin->id}", 0);
+		}
 		$coin->balance = isset($info['balance'])? $info['balance']: 0;
 		$coin->stake = isset($info['stake'])? $info['stake'] : $coin->stake;
 		$coin->mint = dboscalar("select sum(amount) from blocks where coin_id=$coin->id and category='immature'");
@@ -433,6 +469,59 @@ function BackendCoinsUpdate()
 
 	$d1 = microtime(true) - $t1;
 	controller()->memcache->add_monitoring_function(__METHOD__, $d1);
+}
+
+function BackendCoinAutoRecovery()
+{
+	$mc = controller()->memcache->memcache;
+
+	// Find coins that are enabled but auto_ready=0 (stratum marked them broken)
+	$coins = getdbolist('db_coins', "enable=1 AND auto_ready=0 AND installed=1");
+	foreach ($coins as $coin) {
+		$key = "coin_autorecovery_since_{$coin->id}";
+		$since = memcache_get($mc, $key);
+
+		if ($since === false) {
+			// First time we notice it's down — record the time
+			memcache_set($mc, $key, time(), 0, 3600);
+			continue;
+		}
+
+		// Wait 5 minutes before attempting recovery
+		if (time() - $since < 300) continue;
+
+		$remote = new WalletRPC($coin);
+		$info = $remote->getinfo();
+		if (!$info) {
+			// Still not responding — reset timer so we retry in another 5 min
+			memcache_set($mc, $key, time(), 0, 3600);
+			debuglog("auto_recovery: {$coin->symbol} still not responding");
+			continue;
+		}
+
+		// RPC is back — re-enable auto_ready
+		$coin->auto_ready = true;
+		$coin->save();
+		memcache_set($mc, $key, false, 0, 1); // expire immediately
+
+		debuglog("auto_recovery: {$coin->symbol} re-enabled auto_ready");
+		send_email_alert("coin_autorecovery_{$coin->symbol}",
+			"[Pool Alert] {$coin->symbol} stratum auto-recovered",
+			"{$coin->symbol} ({$coin->name}) was automatically re-enabled after the stratum marked it offline.\n".
+			"Time: ".date('Y-m-d H:i:s T')."\n\nNo action needed.",
+			60
+		);
+	}
+
+	// Clear recovery timer for coins that are back online
+	$online = getdbolist('db_coins', "enable=1 AND auto_ready=1");
+	foreach ($online as $coin) {
+		$key = "coin_autorecovery_since_{$coin->id}";
+		$since = memcache_get($mc, $key);
+		if ($since !== false && $since !== 0) {
+			memcache_set($mc, $key, false, 0, 1);
+		}
+	}
 }
 
 function BackendCoinsVersionUpdate($check_algo = '')

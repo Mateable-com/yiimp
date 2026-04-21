@@ -25,6 +25,9 @@ echo '          </tr>';
 echo '        </thead>';
 echo '        <tbody>';
 
+// Fetch screen list once outside the loop — running shell_exec per algo is very slow
+$screen_list = (string) shell_exec("sudo -u yiimpadmin /usr/bin/screen -list");
+
 $best_algo = ''; $best_norm = 0; $algos = array();
 foreach (yaamp_get_algos() as $algo) {
     $algo_norm = yaamp_get_algo_norm($algo);
@@ -61,8 +64,6 @@ foreach ($algos as $item) {
     echo '<td class="text-end pe-4 fw-bold text-dark">'.$btcmhday1.' '.$bestBadge.'</td>';
     echo '</tr>';
 
-    // Fetch local screen list once for fallback
-    $screen_list = (string) shell_exec("sudo -u yiimpadmin /usr/bin/screen -list");
     $t = time() - 120; // 2 minute threshold for DB status
     
     // Total users for this specific algorithm
@@ -95,16 +96,18 @@ foreach ($algos as $item) {
         echo '<td class="text-center">'.($coin->auto_exchange ? '<i class="fa fa-check-circle text-success fs-6"></i>' : '<i class="fa fa-times-circle text-danger fs-6"></i>').'</td>';
         echo '<td class="text-center fw-bold">'.$min_payout.' <small class="text-muted">'.$symbol.'</small></td>';
         echo '<td class="text-center fw-bold '.$status_color.'"><i class="fa '.$status_icon.' me-1"></i>'.$port_val.'</td>';
-        echo '<td class="text-center">'.$users_algo.'</td>';
-        
-        $workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => ($stratum_db ? $stratum_db->pid : 0)));
-        $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => ($stratum_db ? $stratum_db->pid : 0)));
-        
-        // If AUX coin, fallback to total algo workers if PID filter returns 0
-        if ($coin->auxpow && $workers_coins == 0) {
+        $interval = yaamp_hashrate_step();
+        $delay = time() - $interval;
+        if ($coin->auxpow) {
+            $users_coin = $users_algo;
             $workers_coins = $workers;
             $solo_workers_coins = $solo_workers;
+        } else {
+            $users_coin = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=:cid AND time>:delay", array(':cid' => $coin->id, ':delay' => $delay));
+            $workers_coins = $users_coin;
+            $solo_workers_coins = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=:cid AND solo=1 AND time>:delay", array(':cid' => $coin->id, ':delay' => $delay));
         }
+        echo '<td class="text-center">'.$users_coin.'</td>';
         echo '<td class="text-center text-muted">'.$workers_coins.' / '.$solo_workers_coins.'</td>';
         
         $pool_hash = Itoa2(yaamp_coin_rate($coin->id));

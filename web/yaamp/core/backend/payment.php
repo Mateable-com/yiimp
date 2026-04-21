@@ -120,18 +120,14 @@ function BackendCoinPayments($coin)
 
 	foreach($users as $user)
 	{
-		$total_to_pay += round($user->balance, 8);
-		$addresses[$user->username] = round($user->balance, 8);
+		// MicroBitcoin doesn't like 8 decimals
+		$rounded = ($coin->symbol == 'MBC') ? round($user->balance, 2) : round($user->balance, 8);
+		$total_to_pay += $rounded;
+		$addresses[$user->username] = $rounded;
 		// transaction xxx has too many sigops: 1035 > 1000
 		if ($coin->symbol == 'DCR' && count($addresses) > 990) {
 			debuglog("payment: more than 990 {$coin->symbol} users to pay, limit to top balances...");
 			break;
-		}
-		// MicroBitcoin doesn't like 8 decimals
-		if($coin->symbol == 'MBC') 
-		{
-			$total_to_pay += round($user->balance, 2);
-			$addresses[$user->username] = round($user->balance, 2);
 		}
 	}
 
@@ -142,9 +138,10 @@ function BackendCoinPayments($coin)
 	}
 
 	$coef = 1.0;
-	if($info['balance']-$txfee < $total_to_pay && $coin->symbol!='BTC')
+	$info_balance = arraySafeVal($info, 'balance', 0);
+	if($info_balance-$txfee < $total_to_pay && $coin->symbol!='BTC')
 	{
-		$msg = "$coin->symbol: insufficient funds for payment {$info['balance']} < $total_to_pay!";
+		$msg = "$coin->symbol: insufficient funds for payment {$info_balance} < $total_to_pay!";
 		debuglog($msg);
 		send_email_alert('payouts', "$coin->symbol payout problem detected", $msg);
 
@@ -154,7 +151,7 @@ function BackendCoinPayments($coin)
 			$addresses[$key] = $val * $coef;
 		}
 		// still not possible, skip payment
-		if ($info['balance']-$txfee < $total_to_pay)
+		if ($info_balance-$txfee < $total_to_pay)
 			return;
 	}
 
@@ -162,7 +159,7 @@ function BackendCoinPayments($coin)
 	{
 		global $cold_wallet_table;
 
-		$balance = $info['balance'];
+		$balance = $info_balance;
 		$stats = getdbosql('db_stats', "1 order by time desc");
 
 		$renter = dboscalar("select sum(balance) from renters");

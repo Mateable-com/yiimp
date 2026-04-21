@@ -57,7 +57,7 @@ if(!empty($botnets)) {
         echo '<td class="ps-4 text-center"><img src="'.$coin->image.'" width="18" class="rounded-circle shadow-sm"></td>';
         echo '<td><b>'.CHtml::link($coin->symbol, '/admin/coin?id='.$coin->id, ['class'=>'text-decoration-none text-dark']).'</b></td>';
         echo '<td><span class="badge bg-secondary opacity-75">'.$botnet['algo'].'</span></td>';
-        echo '<td>'.CHtml::link(substr($user->username,0,20).'...', '/?address='.$user->username, ['class'=>'text-primary text-decoration-none fw-bold', 'target'=>'_blank']).'</td>';
+        echo '<td>'.CHtml::link(substr($user->username,0,20).'...', '/?address='.urlencode($user->username), ['class'=>'text-primary text-decoration-none fw-bold', 'target'=>'_blank']).'</td>';
         echo '<td class="text-center"><span class="badge bg-danger px-3">'.$botnet['ips'].'</span></td>';
         echo '<td class="text-center fw-bold">'.$botnet['workers'].'</td>';
         echo '<td class="text-muted small">'.datetoa2($botnet['time']).' ago</td>';
@@ -72,9 +72,9 @@ if(!empty($botnets)) {
             echo '    <a href="/admin/loguser?id='.$user->id.'&en=1" class="btn btn-xs btn-outline-secondary py-0 px-2" title="Watch"><i class="fa fa-eye"></i></a>';
 
         if ($user->is_locked)
-            echo '    <a href="/admin/unblockuser?wallet='.$user->username.'" class="btn btn-xs btn-outline-warning py-0 px-2" title="Unblock"><i class="fa fa-unlock"></i></a>';
+            echo '    <a href="/admin/unblockuser?wallet='.urlencode($user->username).'" class="btn btn-xs btn-outline-warning py-0 px-2" title="Unblock"><i class="fa fa-unlock"></i></a>';
         else
-            echo '    <a href="/admin/blockuser?wallet='.$user->username.'" class="btn btn-xs btn-outline-dark py-0 px-2" title="Block"><i class="fa fa-lock"></i></a>';
+            echo '    <a href="/admin/blockuser?wallet='.urlencode($user->username).'" class="btn btn-xs btn-outline-dark py-0 px-2" title="Block"><i class="fa fa-lock"></i></a>';
 
         echo '    <a href="/admin/banuser?id='.$user->id.'" class="btn btn-xs btn-outline-danger py-0 px-2 fw-bold" onclick="return confirm(\'BAN user?\')"><i class="fa fa-ban"></i></a>';
         echo '  </div>';

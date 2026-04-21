@@ -54,7 +54,7 @@ function showUserRow($userid, $reason)
     echo '</td>';
 
 	echo '<td>';
-    echo '  <div class="fw-bold font-monospace" style="font-size: 0.8rem;">'.CHtml::link(substr($user->username,0,20).'...', '/?address='.$user->username, ['class'=>'text-primary text-decoration-none', 'target'=>'_blank']).'</div>';
+    echo '  <div class="fw-bold font-monospace" style="font-size: 0.8rem;">'.CHtml::link(substr($user->username,0,20).'...', '/?address='.urlencode($user->username), ['class'=>'text-primary text-decoration-none', 'target'=>'_blank']).'</div>';
     echo '</td>';
 
     echo '<td><span class="badge '.$reason_badge.' text-uppercase" style="font-size: 0.6rem;">'.$reason.'</span></td>';
@@ -66,9 +66,9 @@ function showUserRow($userid, $reason)
 
 	echo '<td class="text-end pe-4">';
     if($user->is_locked)
-		echo '<a href="/admin/unblockuser?wallet='.$user->username.'" class="btn btn-xs btn-outline-warning py-0 px-2 fw-bold"><i class="fa fa-unlock me-1"></i>UNLOCK</a>';
+		echo '<a href="/admin/unblockuser?wallet='.urlencode($user->username).'" class="btn btn-xs btn-outline-warning py-0 px-2 fw-bold"><i class="fa fa-unlock me-1"></i>UNLOCK</a>';
 	else
-		echo '<a href="/admin/blockuser?wallet='.$user->username.'" class="btn btn-xs btn-outline-dark py-0 px-2 fw-bold"><i class="fa fa-lock me-1"></i>BLOCK</a>';
+		echo '<a href="/admin/blockuser?wallet='.urlencode($user->username).'" class="btn btn-xs btn-outline-dark py-0 px-2 fw-bold"><i class="fa fa-lock me-1"></i>BLOCK</a>';
 	echo '</td>';
 	echo '</tr>';
 }

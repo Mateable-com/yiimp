@@ -45,8 +45,8 @@ foreach($coins as $coin) {
     echo '          <span class="position-absolute bottom-0 end-0 bg-success border border-white border-2 rounded-circle p-1" title="Online"></span>';
     echo '        </div>';
     echo '        <div>';
-    echo '          <h5 class="mb-0 fw-bold">'.$coin->name.'</h5>';
-    echo '          <span class="badge bg-light text-dark font-monospace small">'.$symbol.'</span>';
+    echo '          <h5 class="mb-0 fw-bold">'.htmlspecialchars($coin->name).'</h5>';
+    echo '          <span class="badge bg-light text-dark font-monospace small">'.htmlspecialchars($symbol).'</span>';
     echo '        </div>';
     echo '        <div class="ms-auto text-end">';
     echo '          <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.6rem;">Algorithm</div>';

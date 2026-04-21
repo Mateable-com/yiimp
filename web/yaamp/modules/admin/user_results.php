@@ -75,7 +75,7 @@ foreach($users as $user)
     } else echo '-';
     echo '</td>';
 	echo '<td>';
-    echo '  <div class="fw-bold font-monospace" style="font-size: 0.8rem;">'.CHtml::link(substr($user->username,0,20).'...', '/?address='.$user->username, ['class'=>'text-primary text-decoration-none', 'target'=>'_blank']).'</div>';
+    echo '  <div class="fw-bold font-monospace" style="font-size: 0.8rem;">'.CHtml::link(substr($user->username,0,20).'...', '/?address='.urlencode($user->username), ['class'=>'text-primary text-decoration-none', 'target'=>'_blank']).'</div>';
     echo '  <div class="text-muted" style="font-size: 0.65rem;">Last: '.$d.' ago</div>';
     echo '</td>';
 
@@ -113,9 +113,9 @@ foreach($users as $user)
 		echo '    <a href="/admin/loguser?id='.$user->id.'&en=1" class="btn btn-xs btn-outline-secondary py-0 px-2" title="Watch"><i class="fa fa-eye"></i></a>';
 
 	if ($user->is_locked)
-		echo '    <a href="/admin/unblockuser?wallet='.$user->username.'" class="btn btn-xs btn-outline-warning py-0 px-2" title="Unblock"><i class="fa fa-unlock"></i></a>';
+		echo '    <a href="/admin/unblockuser?wallet='.urlencode($user->username).'" class="btn btn-xs btn-outline-warning py-0 px-2" title="Unblock"><i class="fa fa-unlock"></i></a>';
 	else
-		echo '    <a href="/admin/blockuser?wallet='.$user->username.'" class="btn btn-xs btn-outline-dark py-0 px-2" title="Block"><i class="fa fa-lock"></i></a>';
+		echo '    <a href="/admin/blockuser?wallet='.urlencode($user->username).'" class="btn btn-xs btn-outline-dark py-0 px-2" title="Block"><i class="fa fa-lock"></i></a>';
 
 	echo '    <a href="/admin/banuser?id='.$user->id.'" class="btn btn-xs btn-outline-danger py-0 px-2" onclick="return confirm(\'BAN this user?\')" title="BAN"><i class="fa fa-ban"></i></a>';
     echo '  </div>';

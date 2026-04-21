@@ -84,6 +84,12 @@ class SiteController extends CommonController
 		$this->renderPartialAlgoMemcached('results/history_results');
 	}
 
+	// Home Tab : 24h algo profitability comparison chart data (JSON)
+	public function actionProfit_chart_results()
+	{
+		$this->renderPartial('results/profit_chart_results');
+	}
+
 	// Home Tab : Coin Information (algo) on the bottom right
 	public function actionCoins_info()
 	{
@@ -174,7 +180,7 @@ class SiteController extends CommonController
 			$coin = getdbo('db_coins', $user->coinid);
 
 			if($coin)
-				echo "$balance $coin->symbol - ".settings_get('site_name', YAAMP_SITE_NAME);
+				echo htmlspecialchars("$balance $coin->symbol")." - ".htmlspecialchars(settings_get('site_name', YAAMP_SITE_NAME));
 			else
 				echo "$balance - ".settings_get('site_name', YAAMP_SITE_NAME);
 		}
@@ -183,6 +189,16 @@ class SiteController extends CommonController
 	}
 
 	/////////////////////////////////////////////////
+
+	public function actionGetstarted()
+	{
+		$this->render('getstarted');
+	}
+
+	public function actionFees()
+	{
+		$this->render('fees');
+	}
 
 	public function actionAbout()
 	{
@@ -227,7 +243,7 @@ class SiteController extends CommonController
 			user()->setState('yaamp-algo', 'all');
 
 		$route = getparam('r');
-		if (!empty($route))
+		if (!empty($route) && substr($route, 0, 1) === '/' && substr($route, 0, 2) !== '//')
 			$this->redirect($route);
 		else
 			$this->goback();
@@ -241,6 +257,23 @@ class SiteController extends CommonController
 		}
 		user()->setState('yaamp-algo', $algo);
 		$this->redirect("/site/mining");
+	}
+
+	public function actionSetpayout()
+	{
+		$address = getparam('address');
+		$user = getuserparam($address);
+		if (!$user) { $this->redirect('/?address='.urlencode($address)); return; }
+
+		$threshold = floatval(getparam('threshold'));
+		if ($threshold <= 0) {
+			$user->payout_threshold = null;
+		} else {
+			$user->payout_threshold = round($threshold, 8);
+		}
+		$user->save();
+
+		$this->redirect('/?address='.urlencode($address));
 	}
 
 	public function actionMainbtc()

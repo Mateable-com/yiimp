@@ -113,7 +113,7 @@ function main_error()
 
 function main_refresh()
 {
-	var url = "/admin/coinwallet_results?server=<?=$server?>";
+	var url = "/admin/coinwallet_results?server=<?=urlencode($server)?>";
 
 	clearTimeout(main_timeout);
 	lastSearch = $('input.search').val();

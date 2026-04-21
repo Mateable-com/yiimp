@@ -74,10 +74,10 @@ if($info) {
     echo '            <div class="table-responsive">';
     echo '              <table class="table table-sm table-borderless mb-0 small">';
     echo '                <tbody>';
-    echo '                  <tr class="border-bottom"><td>Balance</td><td class="text-end fw-bold text-primary">'.bitcoinvaluetoa($info['balance']).'</td></tr>';
-    echo '                  <tr class="border-bottom"><td>Blocks</td><td class="text-end fw-bold">'.number_format($info['blocks']).'</td></tr>';
-    echo '                  <tr class="border-bottom"><td>Difficulty</td><td class="text-end fw-bold">'.Itoa2($info['difficulty'], 4).'</td></tr>';
-    echo '                  <tr class="border-bottom"><td>Connections</td><td class="text-end fw-bold">'.$info['connections'].'</td></tr>';
+    echo '                  <tr class="border-bottom"><td>Balance</td><td class="text-end fw-bold text-primary">'.bitcoinvaluetoa(arraySafeVal($info,'balance',0)).'</td></tr>';
+    echo '                  <tr class="border-bottom"><td>Blocks</td><td class="text-end fw-bold">'.number_format(arraySafeVal($info,'blocks',0)).'</td></tr>';
+    echo '                  <tr class="border-bottom"><td>Difficulty</td><td class="text-end fw-bold">'.Itoa2(arraySafeVal($info,'difficulty',0), 4).'</td></tr>';
+    echo '                  <tr class="border-bottom"><td>Connections</td><td class="text-end fw-bold">'.arraySafeVal($info,'connections',0).'</td></tr>';
     echo '                </tbody>';
     echo '              </table>';
     echo '            </div>';

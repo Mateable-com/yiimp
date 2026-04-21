@@ -14,7 +14,7 @@ echo '    <h3 class="mb-0 fw-bold text-dark"><i class="fa fa-university me-2 tex
 echo '  </div>';
 if ($exch) {
     echo '  <div class="col-md-6 text-md-end">';
-    echo '    <span class="badge bg-primary px-3 py-2 fs-6 shadow-sm rounded-pill"><i class="fa fa-exchange-alt me-2"></i>'.$exch.'</span>';
+    echo '    <span class="badge bg-primary px-3 py-2 fs-6 shadow-sm rounded-pill"><i class="fa fa-exchange-alt me-2"></i>'.htmlspecialchars($exch).'</span>';
     echo '    <a href="/admin/balances" class="btn btn-sm btn-outline-secondary rounded-pill px-3 ms-2">Clear Filter</a>';
     echo '  </div>';
 }
@@ -55,7 +55,7 @@ function main_error()
 
 function main_refresh()
 {
-	var url = '/admin/balances_results?exch=<?php echo $exch;?>';
+	var url = '/admin/balances_results?exch=<?php echo urlencode($exch);?>';
 	clearTimeout(main_timeout);
 	$.get(url, '', main_ready).fail(main_error);
 }

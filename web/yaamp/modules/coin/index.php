@@ -85,7 +85,7 @@ foreach($coins as $coin)
 //	echo "<td align=right>$difficulty</td>";
 	echo '<td align="center">'.$coin->block_height.'</td>';
 
-	echo "<td>$coin->errors</td>";
+	echo '<td>'.htmlspecialchars($coin->errors).'</td>';
 	echo "<td>";
 
 	if(!empty($coin->link_bitcointalk))

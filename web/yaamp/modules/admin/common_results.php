@@ -3,6 +3,30 @@
 $mining = getdbosql('db_mining');
 $showrental = (bool) YAAMP_RENTAL;
 
+// --- Cronjob Watchdog ---
+$cron_main_ts   = (int) $this->memcache->get('cronjob_main_time_start');
+$cron_loop2_ts  = (int) $this->memcache->get('cronjob_loop2_time_start');
+$cron_block_ts  = (int) $this->memcache->get('cronjob_block_time_start');
+$now = time();
+$cron_stale_sec = 10 * 60; // alert if cron hasn't run in 10 minutes
+
+$cron_warnings = [];
+if ($cron_main_ts > 0 && $now - $cron_main_ts > $cron_stale_sec)
+    $cron_warnings[] = 'Main cron (last: '.sectoa($now - $cron_main_ts).' ago)';
+if ($cron_loop2_ts > 0 && $now - $cron_loop2_ts > $cron_stale_sec)
+    $cron_warnings[] = 'Loop2 cron (last: '.sectoa($now - $cron_loop2_ts).' ago)';
+if ($cron_block_ts > 0 && $now - $cron_block_ts > $cron_stale_sec)
+    $cron_warnings[] = 'Block cron (last: '.sectoa($now - $cron_block_ts).' ago)';
+
+if (!empty($cron_warnings)) {
+    $warn_msg = implode(', ', $cron_warnings);
+    echo '<div class="alert alert-danger border-0 shadow-sm mb-4 d-flex align-items-center gap-3 rounded-3">';
+    echo '  <i class="fa fa-exclamation-triangle fa-2x text-danger opacity-75"></i>';
+    echo '  <div><strong>Cronjob Alert:</strong> The following cron threads appear to be stalled — '
+        . htmlspecialchars($warn_msg) . '. Check your server\'s cron daemon and YiiMP cron processes.</div>';
+    echo '</div>';
+}
+
 echo '<div class="row g-4">';
 
 // --- Top Row: Global Stats Cards ---

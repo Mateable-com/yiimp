@@ -22,7 +22,7 @@ echo '      <i class="fa fa-wallet fa-2x text-primary"></i>';
 echo '    </div>';
 echo '    <div class="flex-grow-1">';
 echo '      <div class="small text-muted text-uppercase fw-bold mb-1">Miner Wallet Details</div>';
-echo '      <h3 class="mb-0 fw-bold font-monospace text-break">'.$user->username.'</h3>';
+echo '      <h3 class="mb-0 fw-bold font-monospace text-break">'.htmlspecialchars($user->username).'</h3>';
 echo '    </div>';
 echo '    <div class="text-end d-none d-md-block border-start border-secondary border-opacity-25 ps-4 ms-4">';
 echo '      <div class="small text-muted mb-1 text-uppercase fw-bold">Reference Coin</div>';
@@ -148,6 +148,38 @@ if($total_24h > 0) {
     echo '        </tfoot>';
 }
 echo '      </table></div></div></div>';
+
+// --- Payout Threshold Setting ---
+$current_threshold = !empty($user->payout_threshold) ? floatval($user->payout_threshold) : null;
+$min_payout = floatval(YAAMP_PAYMENTS_MINI);
+
+echo '<div class="card shadow-sm border-0 rounded-3 mt-4">';
+echo '  <div class="card-header bg-dark text-white py-3 d-flex align-items-center">';
+echo '    <i class="fa fa-sliders-h me-2 text-warning"></i>';
+echo '    <h5 class="mb-0 fw-bold">Payout Threshold</h5>';
+echo '  </div>';
+echo '  <div class="card-body">';
+echo '    <p class="text-muted small mb-3">Set a custom minimum balance before a payout is triggered. Leave blank to use the pool default (<strong>'.number_format($min_payout, 8).'</strong> in coin units). Must be at least the pool minimum.</p>';
+echo '    <form method="post" action="/site/setpayout" class="d-flex align-items-center gap-3 flex-wrap">';
+echo '      <input type="hidden" name="address" value="'.htmlspecialchars($user->username).'">';
+echo '      <div class="input-group" style="max-width: 280px;">';
+echo '        <input type="number" name="threshold" class="form-control" step="0.00000001" min="0" ';
+echo           'value="'.($current_threshold !== null ? number_format($current_threshold, 8, '.', '') : '').'" ';
+echo           'placeholder="e.g. 0.01">';
+echo '        <span class="input-group-text text-muted small">'.htmlspecialchars($refcoin->symbol).'</span>';
+echo '      </div>';
+echo '      <button type="submit" class="btn btn-warning fw-bold px-4"><i class="fa fa-save me-1"></i>Save</button>';
+if ($current_threshold !== null) {
+    echo '      <a href="/site/setpayout?address='.urlencode($user->username).'&threshold=0" class="btn btn-outline-secondary btn-sm">Reset to Default</a>';
+}
+echo '    </form>';
+if ($current_threshold !== null) {
+    echo '    <div class="mt-2 text-success small"><i class="fa fa-check-circle me-1"></i>Custom threshold active: <strong>'.number_format($current_threshold, 8).'</strong></div>';
+} else {
+    echo '    <div class="mt-2 text-muted small"><i class="fa fa-info-circle me-1"></i>Using pool default threshold.</div>';
+}
+echo '  </div>';
+echo '</div>';
 
 echo '</div>'; // close main container
 ?>

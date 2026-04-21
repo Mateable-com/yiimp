@@ -13,8 +13,16 @@ echo <<<END
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta name="description" content="Yii mining pools for alternative crypto currencies">
-<meta name="keywords" content="anonymous,mining,pool,maxcoin,bitcoin,altcoin,auto,switch,exchange,profit,decred,scrypt,x11,x13,x14,x15,lbry,lyra2re,neoscrypt,sha256,quark,skein2">
+END;
+$site_name = htmlspecialchars(settings_get('site_name', YAAMP_SITE_NAME));
+$site_url  = htmlspecialchars(YAAMP_SITE_URL);
+echo '<meta name="description" content="'.$site_name.' — anonymous multi-algorithm cryptocurrency mining pool. No registration required. Scrypt, X11, SHA-256, Equihash, and many more. Automated payouts.">';
+echo '<meta name="keywords" content="mining pool,anonymous mining,multi algorithm,scrypt,x11,sha256,equihash,lyra2,neoscrypt,altcoin,bitcoin,cryptocurrency,solo mining,merged mining">';
+echo '<meta property="og:title" content="'.$site_name.'">';
+echo '<meta property="og:description" content="Anonymous multi-algorithm cryptocurrency mining pool. No registration required.">';
+echo '<meta property="og:url" content="'.$site_url.'">';
+echo '<meta name="robots" content="index,follow">';
+echo <<<END
 
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -101,6 +109,8 @@ function showPageHeader()
         ['url' => '/stats', 'name' => 'Graphs', 'active' => (controller()->id == 'stats')],
         ['url' => '/site/miners', 'name' => 'Miners', 'active' => ($action == 'miners')],
         ['url' => '/site/api', 'name' => 'API', 'active' => (controller()->id == 'api')],
+        ['url' => '/site/fees', 'name' => 'Fees', 'active' => ($action == 'fees')],
+        ['url' => '/site/getstarted', 'name' => 'Get Started', 'active' => ($action == 'getstarted')],
     ];
 
     if (YIIMP_PUBLIC_EXPLORER) $items[] = ['url' => '/explorer', 'name' => 'Explorers', 'active' => (controller()->id == 'explorer')];
@@ -193,6 +203,8 @@ function showPageFooter()
     echo '        <h6 class="text-uppercase fw-bold mb-3 small" style="letter-spacing: 1px;">Support</h6>';
     echo '        <ul class="list-unstyled small">';
     echo '          <li class="mb-2"><a href="/site/about" class="text-muted text-decoration-none hover-white">About Us</a></li>';
+    echo '          <li class="mb-2"><a href="/site/fees" class="text-muted text-decoration-none hover-white">Fee Schedule</a></li>';
+    echo '          <li class="mb-2"><a href="/site/getstarted" class="text-muted text-decoration-none hover-white">Get Started</a></li>';
     echo '          <li class="mb-2"><a href="/site/terms" class="text-muted text-decoration-none hover-white">Terms of Service</a></li>';
     echo '          <li class="mb-2"><a href="https://bitcointalk.org" target="_blank" class="text-muted text-decoration-none hover-white">BitcoinTalk</a></li>';
     echo '          <li class="mb-2"><a href="mailto:' . YAAMP_ADMIN_EMAIL . '" class="text-muted text-decoration-none hover-white">Contact Admin</a></li>';

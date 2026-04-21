@@ -8,7 +8,7 @@ $userid = intval($user->id);
 echo '<div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">';
 echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
 echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-users me-2 text-primary"></i>Miner Strategy Overview</h5>';
-echo '    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">Miner: <small class="font-monospace">'.$user->username.'</small></span>';
+echo '    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">Miner: <small class="font-monospace">'.htmlspecialchars($user->username).'</small></span>';
 echo '  </div>';
 echo '  <div class="card-body p-0">';
 echo '    <div class="table-responsive">';
@@ -29,7 +29,8 @@ echo '        <tbody>';
 
 foreach(yaamp_get_algos() as $algo)
 {
-	$list = getdbolist('db_coins', "id IN (SELECT DISTINCT coinid FROM shares WHERE userid=$userid AND algo=:algo)", array(':algo' => $algo));
+	$recent = time() - yaamp_hashrate_step();
+	$list = getdbolist('db_coins', "id IN (SELECT DISTINCT coinid FROM shares WHERE userid=$userid AND algo=:algo AND time>$recent)", array(':algo' => $algo));
 	foreach ($list as $coin)
 	{
 		if (!YAAMP_ALLOW_EXCHANGE && isset($coin) && $coin->algo != $algo) continue;
@@ -39,12 +40,15 @@ foreach(yaamp_get_algos() as $algo)
 		$user_shared_rate = yaamp_user_coin_shared_rate($userid, $coinid);
 		$user_solo_rate = yaamp_user_coin_solo_rate($userid, $coinid);
 
+		$blocktime = $coin->block_time ? $coin->block_time : max(min($coin->actual_ttf, 60), 30);
+		$network_hash = yaamp_coin_nethash($coin);
+
 		$pool_shared_hash = yaamp_coin_shared_rate($coinid);
-		$user_shared_ttf  = $user_shared_rate ? $coin->difficulty * 0x100000000 / $pool_shared_hash : 0;
+		$user_shared_ttf  = ($user_shared_rate && $pool_shared_hash) ? $network_hash / $pool_shared_hash * $blocktime * ($pool_shared_hash / $user_shared_rate) : 0;
 		$user_shared_ttf  = $user_shared_ttf ? sectoa2($user_shared_ttf) : '-';
 
 		$pool_solo_hash = yaamp_coin_solo_rate($coinid);
-		$user_solo_ttf  = $user_solo_rate ? $coin->difficulty * 0x100000000 / $pool_solo_hash : 0;
+		$user_solo_ttf  = ($user_solo_rate && $network_hash) ? $network_hash / $user_solo_rate * $blocktime : 0;
 		$user_solo_ttf  = $user_solo_ttf ? sectoa2($user_solo_ttf) : '-';
 
 		$user_shared_rate_sfx = $user_shared_rate? Itoa2($user_shared_rate).'h/s': '-';
@@ -122,7 +126,7 @@ if(count($workers))
 		echo '    <div class="fw-bold">'.($name ? $name : 'Unnamed').'</div>';
 		echo '    <div class="text-muted" style="font-size: 0.7rem;">'.$version.'</div>';
 		echo '  </td>';
-		if ($this->admin) echo '<td><span class="badge bg-light text-dark font-monospace">'.$worker->ip.'</span></td>';
+		if ($this->admin) echo '<td><span class="badge bg-light text-dark font-monospace">'.htmlspecialchars($worker->ip).'</span></td>';
 		echo '  <td class="font-monospace small">'.$password.'</td>';
 		echo '  <td class="text-center small text-uppercase fw-bold">'.$worker->algo.'</td>';
 		echo '  <td class="text-end small">'.round($worker->difficulty, 3).'</td>';

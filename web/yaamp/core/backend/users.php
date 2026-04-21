@@ -1,5 +1,91 @@
 <?php
 
+function BackendWorkerOfflineCheck()
+{
+	$mc = controller()->memcache->memcache;
+	$grace = 15 * 60;
+
+	$rows = dbolist("SELECT DISTINCT userid FROM workers WHERE userid > 0");
+	$active_now = array();
+	foreach ($rows as $r) $active_now[(int)$r['userid']] = 1;
+
+	$prev_active = memcache_get($mc, 'worker_active_users');
+	if ($prev_active === false || !is_array($prev_active)) {
+		memcache_set($mc, 'worker_active_users', $active_now, 0, 3600);
+		return;
+	}
+
+	foreach ($prev_active as $userid => $dummy) {
+		if (isset($active_now[$userid])) {
+			memcache_set($mc, "worker_offline_since_$userid", -1, 0, 3600);
+			continue;
+		}
+
+		$since = memcache_get($mc, "worker_offline_since_$userid");
+		if ($since === false || $since === -1) {
+			memcache_set($mc, "worker_offline_since_$userid", time(), 0, 3600);
+		} elseif ($since > 0 && time() - $since > $grace) {
+			$user = getdbo('db_accounts', intval($userid));
+			if ($user) {
+				$addr = substr($user->username, 0, 20) . '...';
+				send_email_alert(
+					"worker_offline_$userid",
+					"[Pool Alert] Miner offline: $addr",
+					"All workers for miner {$user->username} have been offline for more than " . round($grace/60) . " minutes.\n\nUser ID: {$user->id}\nWallet: {$user->username}",
+					60
+				);
+			}
+			memcache_set($mc, "worker_offline_since_$userid", 0, 0, 3600);
+		}
+	}
+
+	foreach ($active_now as $userid => $dummy) {
+		if (!isset($prev_active[$userid])) {
+			$since = memcache_get($mc, "worker_offline_since_$userid");
+			if ($since !== false && $since === 0) {
+				$user = getdbo('db_accounts', intval($userid));
+				if ($user) {
+					$addr = substr($user->username, 0, 20) . '...';
+					send_email_alert(
+						"worker_recovery_$userid",
+						"[Pool Alert] Miner reconnected: $addr",
+						"Workers for miner {$user->username} are back online.\n\nUser ID: {$user->id}\nWallet: {$user->username}",
+						60
+					);
+				}
+				memcache_set($mc, "worker_offline_since_$userid", -1, 0, 3600);
+			}
+		}
+	}
+
+	memcache_set($mc, 'worker_active_users', $active_now, 0, 3600);
+}
+
+function BackendDuplicateAddressCheck()
+{
+	$dupes = dbolist(
+		"SELECT username, COUNT(*) AS cnt, GROUP_CONCAT(id ORDER BY id SEPARATOR ',') AS ids
+		 FROM accounts
+		 WHERE coinid IS NOT NULL
+		 GROUP BY username
+		 HAVING cnt > 1
+		 LIMIT 50"
+	);
+
+	if (empty($dupes)) return;
+
+	$msg = '';
+	foreach ($dupes as $row) {
+		$msg .= "Address: {$row['username']}  — account IDs: {$row['ids']}\n";
+	}
+
+	send_email_alert('duplicate_addresses',
+		'[Pool Alert] Duplicate payout addresses detected',
+		"The following wallet addresses appear under multiple account IDs. This may indicate duplicate registrations or address reuse:\n\n$msg\nCheck /admin/user for details.",
+		360
+	);
+}
+
 function BackendUsersUpdate()
 {
 	$t1 = microtime(true);

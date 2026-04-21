@@ -12,7 +12,7 @@ echo '    <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-4 shadow-sm
 echo '      <i class="fa fa-cubes fa-2x text-primary"></i>';
 echo '    </div>';
 echo '    <div class="flex-grow-1">';
-echo '      <h2 class="mb-0 fw-bold">Block Explorer '.($coin ? '<span class="text-primary fs-5">('.$coin->symbol.')</span>' : '').'</h2>';
+echo '      <h2 class="mb-0 fw-bold">Block Explorer '.($coin ? '<span class="text-primary fs-5">('.htmlspecialchars($coin->symbol).')</span>' : '').'</h2>';
 echo '      <p class="text-muted small mb-0 mt-1">Real-time ledger of recently discovered blocks and network rewards.</p>';
 echo '    </div>';
 echo '    <div class="ms-auto">';

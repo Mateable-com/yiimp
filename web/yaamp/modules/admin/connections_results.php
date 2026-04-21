@@ -32,9 +32,9 @@ foreach($list as $conn)
 
 	echo '<tr class="'.$row_class.'">';
 	echo '<td class="ps-4 text-muted small">'.$conn->id.'</td>';
-	echo '<td class="fw-bold">'.$conn->user.'</td>';
-	echo '<td class="font-monospace text-muted" style="font-size: 0.75rem;">'.$conn->host.'</td>';
-	echo '<td><span class="badge bg-light text-dark border">'.$conn->db.'</span></td>';
+	echo '<td class="fw-bold">'.htmlspecialchars($conn->user).'</td>';
+	echo '<td class="font-monospace text-muted" style="font-size: 0.75rem;">'.htmlspecialchars($conn->host).'</td>';
+	echo '<td><span class="badge bg-light text-dark border">'.htmlspecialchars($conn->db).'</span></td>';
 	echo '<td class="text-center"><span class="badge '.($conn->idle > 300 ? 'bg-warning text-dark' : 'bg-light text-muted').'">'.sectoa($conn->idle).'</span></td>';
 	echo '<td class="text-muted small">'.datetoa2($conn->created).' ago</td>';
 	echo '<td class="small">'.datetoa2($conn->last).' ago</td>';

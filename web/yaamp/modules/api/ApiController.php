@@ -52,7 +52,7 @@ class ApiController extends CommonController
 			if (yaamp_pool_shared_rate($algo)) $pool_shared_hash = yaamp_pool_shared_rate($algo);
 			else $pool_shared_hash = '0';
 
-			if (yaamp_pool_solo_rate($algo)) $pool_shared_hash = yaamp_pool_solo_rate($algo);
+			if (yaamp_pool_solo_rate($algo)) $pool_solo_hash = yaamp_pool_solo_rate($algo);
 			else $pool_solo_hash = '0';
 
             $price = controller()->memcache->get_database_scalar("api_status_price-$algo", "select price from hashrate where algo=:algo order by time desc limit 1", array(
@@ -341,15 +341,23 @@ class ApiController extends CommonController
         echo "\"miners\": ";
         echo "[";
 
-        $workers = getdbolist('db_workers', "userid={$user->id} ORDER BY password");
+        $workers = getdbolist('db_workers', "userid={$user->id} ORDER BY algo, name");
         foreach ($workers as $i => $worker) {
             $user_rate1     = yaamp_worker_rate($worker->id, $worker->algo);
             $user_rate1_bad = yaamp_worker_rate_bad($worker->id, $worker->algo);
+            $last_share = (int) dboscalar("SELECT MAX(time) FROM shares WHERE workerid=:wid AND time > :t",
+                array(':wid' => $worker->id, ':t' => time() - 86400));
+
+            // Strip wallet prefix from worker name for display
+            $display_name = $worker->name;
+            if (strpos($display_name, '.') !== false)
+                $display_name = substr($display_name, strpos($display_name, '.') + 1);
 
             if ($i)
                 echo ", ";
 
             echo "{";
+            echo "\"name\": " . json_encode($display_name) . ", ";
             echo "\"version\": " . json_encode($worker->version) . ", ";
             echo "\"password\": " . json_encode($worker->password) . ", ";
             echo "\"ID\": " . json_encode($worker->worker) . ", ";
@@ -357,7 +365,8 @@ class ApiController extends CommonController
             echo "\"difficulty\": " . doubleval($worker->difficulty) . ", ";
             echo "\"subscribe\": " . intval($worker->subscribe) . ", ";
             echo "\"accepted\": " . round($user_rate1, 3) . ", ";
-            echo "\"rejected\": " . round($user_rate1_bad, 3);
+            echo "\"rejected\": " . round($user_rate1_bad, 3) . ", ";
+            echo "\"last_share\": " . $last_share;
             echo "}";
         }
 
@@ -406,40 +415,34 @@ class ApiController extends CommonController
         $balance     = bitcoinvaluetoa($renter->balance);
         $unconfirmed = bitcoinvaluetoa($renter->unconfirmed);
 
-        header('Content-Type: application/json');
-
-        echo "{";
-        echo "\"balance\": $balance, ";
-        echo "\"unconfirmed\": $unconfirmed, ";
-
-        echo "\"jobs\": [";
+        $jobs_out = array();
         $list = getdbolist('db_jobs', "renterid=$renter->id");
-        foreach ($list as $i => $job) {
-            if ($i)
-                echo ", ";
-
+        foreach ($list as $job) {
             $hashrate     = yaamp_job_rate($job->id);
             $hashrate_bad = yaamp_job_rate_bad($job->id);
-
-            echo '{';
-            echo "\"jobid\": \"$job->id\", ";
-            echo "\"algo\": \"$job->algo\", ";
-            echo "\"price\": \"$job->price\", ";
-            echo "\"hashrate\": \"$job->speed\", ";
-            echo "\"server\": \"$job->host\", ";
-            echo "\"port\": \"$job->port\", ";
-            echo "\"username\": \"$job->username\", ";
-            echo "\"password\": \"$job->password\", ";
-            echo "\"started\": \"$job->ready\", ";
-            echo "\"active\": \"$job->active\", ";
-            echo "\"accepted\": \"$hashrate\", ";
-            echo "\"rejected\": \"$hashrate_bad\", ";
-            echo "\"diff\": \"$job->difficulty\"";
-
-            echo '}';
+            $jobs_out[] = array(
+                'jobid'    => (string) $job->id,
+                'algo'     => $job->algo,
+                'price'    => $job->price,
+                'hashrate' => $job->speed,
+                'server'   => $job->host,
+                'port'     => $job->port,
+                'username' => $job->username,
+                'password' => $job->password,
+                'started'  => $job->ready,
+                'active'   => $job->active,
+                'accepted' => $hashrate,
+                'rejected' => $hashrate_bad,
+                'diff'     => $job->difficulty,
+            );
         }
 
-        echo "]}";
+        header('Content-Type: application/json');
+        echo json_encode(array(
+            'balance'     => $balance,
+            'unconfirmed' => $unconfirmed,
+            'jobs'        => $jobs_out,
+        ));
     }
 
     public function actionRental_price()
@@ -552,10 +555,60 @@ class ApiController extends CommonController
         $coin_symbol = $coin ? $coin->symbol : 'BTC';
 
         header('Content-Type: application/json');
-        echo "{";
-        echo "\"address\": \"$renter->address\", ";
-        echo "\"symbol\": \"$coin_symbol\"";
-        echo "}";
+        echo json_encode(array(
+            'address' => $renter->address,
+            'symbol'  => $coin_symbol,
+        ));
+    }
+
+    /////////////////////////////////////////////////
+
+    public function actionWorkers()
+    {
+        if (!LimitRequest('api-workers', 10)) return;
+        if (is_file(YAAMP_LOGS . '/overloaded')) {
+            header('HTTP/1.0 503 Disabled, server overloaded');
+            return;
+        }
+
+        $wallet = getparam('address');
+        if (empty($wallet)) return;
+
+        $ip = arraySafeVal($_SERVER, 'REMOTE_ADDR', '');
+        if (!LimitRequest("api_workers_$ip", 20, 60)) {
+            header('HTTP/1.0 429 Too Many Requests');
+            return;
+        }
+
+        $user = getuserparam($wallet);
+        if (!$user || $user->is_locked) return;
+
+        $now = time();
+        $workers = getdbolist('db_workers', "userid={$user->id} ORDER BY algo, name");
+        $out = [];
+        foreach ($workers as $worker) {
+            $rate     = round(yaamp_worker_rate($worker->id, $worker->algo), 3);
+            $rate_bad = round(yaamp_worker_rate_bad($worker->id, $worker->algo), 3);
+            $last_share = (int) dboscalar("SELECT MAX(time) FROM shares WHERE workerid=:wid AND time > :t",
+                array(':wid' => $worker->id, ':t' => $now - 86400));
+
+            $display_name = $worker->name;
+            if (strpos($display_name, '.') !== false)
+                $display_name = substr($display_name, strpos($display_name, '.') + 1);
+
+            $out[] = [
+                'name'        => $display_name,
+                'algo'        => $worker->algo,
+                'accepted'    => $rate,
+                'rejected'    => $rate_bad,
+                'difficulty'  => (double) $worker->difficulty,
+                'last_share'  => $last_share,
+                'version'     => $worker->version,
+            ];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($out, JSON_PRETTY_PRINT);
     }
 
 }

@@ -10,7 +10,7 @@ showFlashMessage();
 
 echo '<div class="card shadow-sm border-0 mb-4">';
 echo '  <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">';
-echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-university me-2 text-warning"></i>Market Balances: '.strtoupper($exch).'</h5>';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-university me-2 text-warning"></i>Market Balances: '.htmlspecialchars(strtoupper($exch)).'</h5>';
 echo '    <span class="badge bg-warning text-dark px-3 fw-bold">Active Markets: '.count($markets).'</span>';
 echo '  </div>';
 echo '  <div class="card-body p-0">';

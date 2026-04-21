@@ -85,7 +85,36 @@ echo CHtml::beginForm('', 'post', array('id'=>'settings-form'));
             </div>
         </div>
 
-        <!-- Section 3: Social & Support -->
+        <!-- Section 3: Pool Announcement -->
+        <div class="col-12">
+            <div class="card bg-light border-0 rounded-3">
+                <div class="card-header bg-transparent border-0 fw-bold small text-uppercase py-3">
+                    <i class="fa fa-bullhorn me-2 text-warning"></i>Pool Announcement Banner
+                </div>
+                <div class="card-body pt-0">
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Announcement Message <span class="text-muted fw-normal">(leave blank to hide banner)</span></label>
+                        <input type="text" name="Settings[pool_announcement]" class="form-control border-2" value="<?php echo htmlspecialchars(settings_get('pool_announcement', '')); ?>" placeholder="e.g. Scheduled maintenance on Sunday at 02:00 UTC">
+                        <div class="form-text small text-muted">Shown as a highlighted banner at the top of the home page and pool page. HTML is not allowed.</div>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-bold">Banner Style</label>
+                        <select name="Settings[pool_announcement_style]" class="form-select border-2 w-auto">
+                            <?php
+                            $styles = ['info' => 'Info (Blue)', 'success' => 'Success (Green)', 'warning' => 'Warning (Yellow)', 'danger' => 'Alert (Red)'];
+                            $cur_style = settings_get('pool_announcement_style', 'info');
+                            foreach ($styles as $val => $label) {
+                                $sel = ($cur_style == $val) ? ' selected' : '';
+                                echo "<option value=\"$val\"$sel>$label</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Social & Support -->
         <div class="col-12">
             <div class="card bg-light border-0 rounded-3">
                 <div class="card-header bg-transparent border-0 fw-bold small text-uppercase py-3">

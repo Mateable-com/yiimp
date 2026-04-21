@@ -66,8 +66,8 @@ foreach($list as $item)
 
 	echo '<tr>';
 	echo '<td class="ps-4 text-center"><img width="18" src="'.$coin->image.'" class="rounded-circle shadow-sm"></td>';
-	echo '<td><b>'.CHtml::link($coin->name, '/site/block?id='.$id, ['class'=>'text-decoration-none text-dark']).'</b></td>';
-	echo '<td class="text-center small text-muted fw-bold">'.$coin->symbol.'</td>';
+	echo '<td><b>'.CHtml::link(htmlspecialchars($coin->name), '/site/block?id='.$id, ['class'=>'text-decoration-none text-dark']).'</b></td>';
+	echo '<td class="text-center small text-muted fw-bold">'.htmlspecialchars($coin->symbol).'</td>';
 	echo '<td class="text-end">'.($res1['a']?:'-').'</td>';
 	echo '<td class="text-end">'.($res2['a']?:'-').'</td>';
 	echo '<td class="text-end">'.($res3['a']?:'-').'</td>';

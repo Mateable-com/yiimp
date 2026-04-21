@@ -29,7 +29,7 @@ showTableSorter('maintable', "{
 
 echo '<div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">';
 echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
-echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-cubes me-2 text-primary"></i>Latest Blocks: <span class="text-primary small text-uppercase">'.($coin ? $coin->name : 'All').'</span></h5>';
+echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-cubes me-2 text-primary"></i>Latest Blocks: <span class="text-primary small text-uppercase">'.($coin ? htmlspecialchars($coin->name) : 'All').'</span></h5>';
 echo '    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3">Live Explorer</span>';
 echo '  </div>';
 echo '  <div class="card-body p-0">';
@@ -69,9 +69,9 @@ foreach($db_blocks as $db_block)
 	$flags = $db_block->segwit ? '&nbsp;<img src="/images/ui/segwit.png" height="8px" title="segwit"/>' : '';
 
 	echo '  <td>';
-	if ($this->admin) echo '<a href="/site/coin?id='.$coin->id.'" class="text-decoration-none fw-bold">'.$coin->name.'</a>';
-	else echo '<span class="fw-bold">'.$coin->name.'</span>';
-	echo ' <small class="text-muted">('.$coin->symbol.')</small>'.$flags.'</td>';
+	if ($this->admin) echo '<a href="/site/coin?id='.$coin->id.'" class="text-decoration-none fw-bold">'.htmlspecialchars($coin->name).'</a>';
+	else echo '<span class="fw-bold">'.htmlspecialchars($coin->name).'</span>';
+	echo ' <small class="text-muted">('.htmlspecialchars($coin->symbol).')</small>'.$flags.'</td>';
 
 	$d = datetoa2($db_block->time);
 	echo '  <td data="'.$db_block->time.'">'.$d.' ago</td>';

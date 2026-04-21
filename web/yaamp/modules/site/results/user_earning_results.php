@@ -11,7 +11,7 @@ $count = $count? $count: 50;
 echo '<div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">';
 echo '  <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center">';
 echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-hand-holding-usd me-2 text-success"></i>Last '.$count.' Earnings</h5>';
-echo '    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3">Miner: <small class="font-monospace">'.$user->username.'</small></span>';
+echo '    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3">Miner: <small class="font-monospace">'.htmlspecialchars($user->username).'</small></span>';
 echo '  </div>';
 echo '  <div class="card-body p-0">';
 echo '    <div class="table-responsive">';

@@ -47,6 +47,34 @@
                 </div>
             </div>
 
+            <!-- Endpoint: Workers -->
+            <div class="card shadow-sm border-0 mb-4 rounded-4">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-microchip me-2 text-success"></i>Worker Stats</h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <p class="small text-muted">Real-time per-worker hashrate, difficulty, rejection rate, and last share timestamp for any address.</p>
+                    <div class="mb-3">
+                        <span class="badge bg-primary mb-2">GET</span>
+                        <code class="d-block p-3 bg-light rounded-3 border fw-bold text-primary mb-3">http://<?=YAAMP_API_URL?>/api/workers?address=WALLET_ADDRESS</code>
+                    </div>
+                    <div class="bg-dark p-3 rounded-3 shadow-sm border border-secondary border-opacity-25">
+                        <div class="text-muted small text-uppercase fw-bold mb-2 opacity-50">Example JSON Response:</div>
+                        <pre class="text-success mb-0 small">[
+  {
+    "name": "rig1",
+    "algo": "scrypt",
+    "accepted": 12500.000,
+    "rejected": 0.000,
+    "difficulty": 65536,
+    "last_share": 1713700000,
+    "version": "cgminer/4.10.0"
+  }
+]</pre>
+                    </div>
+                </div>
+            </div>
+
             <!-- Endpoint: Pool Status -->
             <div class="card shadow-sm border-0 mb-4 rounded-4">
                 <div class="card-header bg-white py-3 border-0">

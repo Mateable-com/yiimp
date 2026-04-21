@@ -301,15 +301,15 @@ class AdminController extends CommonController {
 				$remote = new WalletRPC($coin);
 	
 				$info = $remote->getinfo();
-				if(!$info || !$info['balance']) return false;
-	
+				if(!$info || !arraySafeVal($info,'balance',0)) return false;
+
 				$deposit_info = $remote->validateaddress($bookmark->address);
 				if(!$deposit_info || !isset($deposit_info['isvalid']) || !$deposit_info['isvalid']) {
 					user()->setFlash('error', "invalid address for {$coin->name}, {$bookmark->address}");
 					$this->redirect(array('admin/coin', 'id'=>$coin->id));
 				}
-	
-				$amount = min($amount, $info['balance'] - $info['paytxfee']);
+
+				$amount = min($amount, arraySafeVal($info,'balance',0) - arraySafeVal($info,'paytxfee',0));
 				$amount = round($amount, 8);
 	
 				$tx = $remote->sendtoaddress($bookmark->address, $amount);

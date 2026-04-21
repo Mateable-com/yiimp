@@ -45,7 +45,7 @@ echo '</div>';
 
 // --- Wallet Errors / Sync Status ---
 if(!empty($coin->errors)) {
-    echo '<div class="alert alert-danger border-0 shadow-sm mb-4 mx-2 fw-bold"><i class="fa fa-exclamation-triangle me-2"></i>WALLET ERROR: '.$coin->errors.'</div>';
+    echo '<div class="alert alert-danger border-0 shadow-sm mb-4 mx-2 fw-bold"><i class="fa fa-exclamation-triangle me-2"></i>WALLET ERROR: '.htmlspecialchars($coin->errors).'</div>';
 }
 
 if($coin->block_height < $coin->target_height) {

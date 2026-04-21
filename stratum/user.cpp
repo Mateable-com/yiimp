@@ -232,7 +232,7 @@ void db_clear_worker(YAAMP_DB *db, YAAMP_CLIENT *client)
 
 void db_add_worker(YAAMP_DB *db, YAAMP_CLIENT *client)
 {
-	char password[128] = { 0 };
+	char password[1024] = { 0 };
 	char version[128] = { 0 };
 	char worker[128] = { 0 };
 	int now = time(NULL);
@@ -245,14 +245,14 @@ void db_add_worker(YAAMP_DB *db, YAAMP_CLIENT *client)
 	db_check_user_input(client->worker);
 
 	// strip for recent mysql defaults (error if fields are too long)
-	if (strlen(client->password) > 64)
+	if (strlen(client->password) > 1023)
 		clientlog(client, "password too long truncated: %s", client->password);
 	if (strlen(client->version) > 64)
 		clientlog(client, "version too long truncated: %s", client->version);
 	if (strlen(client->worker) > 64)
 		clientlog(client, "worker too long truncated: %s", client->worker);
 
-	strncpy(password, client->password, 64);
+	strncpy(password, client->password, 1023);
 	strncpy(version, client->version, 64);
 	strncpy(worker, client->worker, 64);
 

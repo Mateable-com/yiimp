@@ -121,11 +121,12 @@ class ExplorerController extends CommonController
 		$q = gethexparam('q');
 		$url = '/'; // defaults to home on invalid search
 		if (isset($_GET['SYM'])) {
-			// only for visible coins
-			$url = "/explorer/".$_GET['SYM']."?";
+			// only alphanumeric coin symbols allowed
+			$sym = preg_replace('/[^A-Za-z0-9]/', '', $_GET['SYM']);
+			if ($sym) $url = "/explorer/".rawurlencode($sym)."?";
 		} else if (isset($_GET['id'])) {
-			// only for hidden coins
-			$url = "/explorer/".$_GET['id']."?";
+			$id = intval($_GET['id']);
+			if ($id > 0) $url = "/explorer/".intval($id)."?";
 		}
 		if (!empty($height)) $url .= "&height=$height";
 		if (!empty($txid)) $url .= "&txid=$txid";

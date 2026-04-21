@@ -72,8 +72,11 @@ class CronjobController extends CommonController
 		$this->monitorApache();
 
 		BackendCoinsUpdate();
+		BackendCoinAutoRecovery();
 		BackendStatsUpdate();
 		BackendUsersUpdate();
+		BackendWorkerOfflineCheck();
+		BackendDuplicateAddressCheck();
 
 		BackendUpdateServices();
 		BackendUpdateDeposit();
@@ -189,6 +192,24 @@ class CronjobController extends CommonController
 
 		debuglog(__METHOD__." $state");
 		memcache_set($this->memcache->memcache, "cronjob_main_state_$state", 0);
+
+		// Watchdog: alert if loop2 or block cron haven't run recently
+		$cron_stale_sec = 10 * 60;
+		$now = time();
+		$loop2_ts = (int) memcache_get($this->memcache->memcache, 'cronjob_loop2_time_start');
+		$block_ts = (int) memcache_get($this->memcache->memcache, 'cronjob_block_time_start');
+		$stale = array();
+		if ($loop2_ts > 0 && $now - $loop2_ts > $cron_stale_sec)
+			$stale[] = 'Loop2 cron (last: '.sectoa($now - $loop2_ts).' ago)';
+		if ($block_ts > 0 && $now - $block_ts > $cron_stale_sec)
+			$stale[] = 'Block cron (last: '.sectoa($now - $block_ts).' ago)';
+		if (!empty($stale)) {
+			send_email_alert('cron_stalled', '[Pool Alert] YiiMP cronjob stalled',
+				"One or more YiiMP cron threads have not run in over ".round($cron_stale_sec/60)." minutes:\n\n"
+				. implode("\n", $stale) . "\n\nCheck crontab and cron processes on your server.",
+				60
+			);
+		}
 
 		memcache_set($this->memcache->memcache, "cronjob_main_time_start", time());
 		if(!YAAMP_PRODUCTION) return;

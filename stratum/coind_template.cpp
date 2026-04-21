@@ -273,6 +273,7 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 	}
 
 	if(!strcmp(coind->symbol, "PPC")) strcpy(params, "[]");
+	else if(coind->multialgos && coind->usesegwit) sprintf(params, "[{\"algo\":\"%s\",\"rules\":[\"segwit\"]}]", g_stratum_algo);
 	else if(coind->multialgos) sprintf(params, "[{\"algo\":\"%s\"}]", g_stratum_algo);
 	else if(g_stratum_segwit) strcpy(params, "[{\"rules\":[\"segwit\"]}]");
        
