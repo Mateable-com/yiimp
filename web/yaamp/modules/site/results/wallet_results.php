@@ -27,7 +27,7 @@ echo '    </div>';
 echo '    <div class="text-end d-none d-md-block border-start border-secondary border-opacity-25 ps-4 ms-4">';
 echo '      <div class="small text-muted mb-1 text-uppercase fw-bold">Reference Coin</div>';
 echo '      <div class="d-flex align-items-center justify-content-end">';
-echo '        <img src="'.$refcoin->image.'" width="24" class="me-2 rounded-circle shadow-sm">';
+echo '        <img src="'.htmlspecialchars($refcoin->image).'" width="24" class="me-2 rounded-circle shadow-sm">';
 echo '        <h4 class="mb-0 fw-bold">'.$refcoin->symbol.'</h4>';
 echo '      </div>';
 echo '    </div>';
@@ -109,6 +109,66 @@ foreach ($summary as $s) {
     echo '</div></div></div>';
 }
 echo '</div>';
+
+// --- Aux Coin Balances (Merge Mining) ---
+$aux_accounts = [];
+$worker_passwords = dbolist("SELECT DISTINCT password FROM workers WHERE userid=$user->id AND password!=''");
+foreach ($worker_passwords as $wp) {
+	$parts = explode(',', $wp['password']);
+	foreach ($parts as $part) {
+		if (strncmp($part, 'm=', 2) === 0) {
+			$val = substr($part, 2);
+			if ($val === 'solo') continue;
+			$colon = strpos($val, ':');
+			if ($colon === false) continue;
+			$sym = strtoupper(substr($val, 0, $colon));
+			$addr = substr($val, $colon + 1);
+			if (!$addr || isset($aux_accounts[$sym])) continue;
+			$aux_coin = getdbosql('db_coins', "symbol=:s", array(':s' => $sym));
+			if (!$aux_coin) continue;
+			$aux_user = getdbosql('db_accounts', "username=:a AND coinid=:c", array(':a' => $addr, ':c' => $aux_coin->id));
+			if (!$aux_user) continue;
+			$aux_pending = (double)controller()->memcache->get_database_scalar(
+				"wallet_aux_pending-$aux_user->id",
+				"SELECT SUM(amount) FROM earnings WHERE userid=$aux_user->id"
+			);
+			$aux_paid = (double)controller()->memcache->get_database_scalar(
+				"wallet_aux_paid-$aux_user->id",
+				"SELECT SUM(amount) FROM payouts WHERE account_id=$aux_user->id"
+			);
+			$aux_accounts[$sym] = [
+				'coin'    => $aux_coin,
+				'address' => $addr,
+				'balance' => (double)$aux_user->balance,
+				'pending' => $aux_pending,
+				'paid'    => $aux_paid,
+			];
+		}
+	}
+}
+
+if (!empty($aux_accounts)) {
+	echo '<div class="card shadow-sm border-0 mb-4 rounded-3">';
+	echo '  <div class="card-header bg-dark text-white py-3 border-0">';
+	echo '    <h5 class="mb-0 fw-bold"><i class="fa fa-link me-2 text-success"></i>Merge Mining Balances</h5>';
+	echo '  </div>';
+	echo '  <div class="card-body p-0"><div class="table-responsive">';
+	echo '    <table class="table table-hover align-middle mb-0 small">';
+	echo '      <thead class="table-light text-muted text-uppercase" style="font-size: 0.65rem;">';
+	echo '        <tr><th class="ps-4">Coin</th><th class="font-monospace">Address</th><th class="text-end">Balance</th><th class="text-end">Pending Earnings</th><th class="text-end pe-4">Total Paid Out</th></tr>';
+	echo '      </thead><tbody>';
+	foreach ($aux_accounts as $sym => $a) {
+		$coin = $a['coin'];
+		echo '<tr>';
+		echo '  <td class="ps-4"><img src="'.htmlspecialchars($coin->image).'" width="18" class="me-2 rounded-circle shadow-sm"><b>'.htmlspecialchars($sym).'</b></td>';
+		echo '  <td class="font-monospace small text-muted">'.htmlspecialchars(substr($a['address'], 0, 20)).'&hellip;</td>';
+		echo '  <td class="text-end fw-bold text-success">'.altcoinvaluetoa($a['balance']).'</td>';
+		echo '  <td class="text-end text-info">'.altcoinvaluetoa($a['pending']).'</td>';
+		echo '  <td class="text-end pe-4 text-muted">'.altcoinvaluetoa($a['paid']).'</td>';
+		echo '</tr>';
+	}
+	echo '      </tbody></table></div></div></div>';
+}
 
 // --- Payouts History Card ---
 echo '<div class="card shadow-sm border-0 rounded-3">';

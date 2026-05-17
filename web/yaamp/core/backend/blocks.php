@@ -74,8 +74,13 @@ function BackendBlockNew($coin, $db_block)
 				if ($amount <= 0) continue;
 			}
 
-			if (!YAAMP_ALLOW_EXCHANGE || $ucoin->id == $coin->id ||
-				($ucoin->auto_exchange && $coin->auto_exchange)) {
+			// In non-exchange mode: only pay users whose coinid matches the mined coin.
+			// coinid=0 means the address hasn't been validated yet — allow it so new miners
+			// are not silently skipped before BackendUsersUpdate runs.
+			// In exchange mode: keep the original exchange/auto-exchange logic.
+			if (YAAMP_ALLOW_EXCHANGE
+				? ($ucoin && ($ucoin->id == $coin->id || ($ucoin->auto_exchange && $coin->auto_exchange)))
+				: (!$user->coinid || $user->coinid == $coin->id)) {
 
 				$earning = new db_earnings;
 				$earning->userid = $user->id;
@@ -131,8 +136,9 @@ function BackendBlockNew($coin, $db_block)
 
 		if(!$user->no_fees) $amount = take_yaamp_fee($amount, $coin->algo, YAAMP_FEES_SOLO);
 
-		if (!YAAMP_ALLOW_EXCHANGE || $ucoin->id == $coin->id ||
-			($ucoin->auto_exchange && $coin->auto_exchange)) {
+		if (YAAMP_ALLOW_EXCHANGE
+			? ($ucoin && ($ucoin->id == $coin->id || ($ucoin->auto_exchange && $coin->auto_exchange)))
+			: (!$user->coinid || $user->coinid == $coin->id)) {
 
 			$earning = new db_earnings;
 			$earning->userid = $user->id;

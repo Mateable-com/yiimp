@@ -114,7 +114,7 @@ if(count($workers))
 		$user_rate1_sfx = $user_rate1? Itoa2($user_rate1).'h/s': '-';
 
 		$version = substr($worker->version, 0, 25);
-		$password = substr($worker->password, 0, 35);
+		$password = $worker->password;
 		$name = $worker->worker;
 		$subscribe = $worker->subscribe ? '<i class="fa fa-check text-success"></i>' : '-';
 
@@ -127,7 +127,7 @@ if(count($workers))
 		echo '    <div class="text-muted" style="font-size: 0.7rem;">'.$version.'</div>';
 		echo '  </td>';
 		if ($this->admin) echo '<td><span class="badge bg-light text-dark font-monospace">'.htmlspecialchars($worker->ip).'</span></td>';
-		echo '  <td class="font-monospace small">'.$password.'</td>';
+		echo '  <td class="font-monospace small" style="max-width:220px;word-break:break-all;white-space:normal;">'.$password.'</td>';
 		echo '  <td class="text-center small text-uppercase fw-bold">'.$worker->algo.'</td>';
 		echo '  <td class="text-end small">'.round($worker->difficulty, 3).'</td>';
 		echo '  <td class="text-center">'.$subscribe.'</td>';

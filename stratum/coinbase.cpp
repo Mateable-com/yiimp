@@ -115,7 +115,7 @@ void coinbase_aux(YAAMP_JOB_TEMPLATE *templ, char *aux_script)
 	// DASH based aux coins like OSMI use different magic code
 	if (!strcmp(g_stratum_algo, "x11")) {
 		sprintf(aux_script+strlen(aux_script), "4f534d41%s%02x00000000000000", merkle_hash, templ->auxs_size);
-    } else {
+	} else {
 		sprintf(aux_script+strlen(aux_script), "fabe6d6d%s%02x00000000000000", merkle_hash, templ->auxs_size);
 	}
 }

@@ -98,15 +98,9 @@ foreach ($algos as $item) {
         echo '<td class="text-center fw-bold '.$status_color.'"><i class="fa '.$status_icon.' me-1"></i>'.$port_val.'</td>';
         $interval = yaamp_hashrate_step();
         $delay = time() - $interval;
-        if ($coin->auxpow) {
-            $users_coin = $users_algo;
-            $workers_coins = $workers;
-            $solo_workers_coins = $solo_workers;
-        } else {
-            $users_coin = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=:cid AND time>:delay", array(':cid' => $coin->id, ':delay' => $delay));
-            $workers_coins = $users_coin;
-            $solo_workers_coins = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=:cid AND solo=1 AND time>:delay", array(':cid' => $coin->id, ':delay' => $delay));
-        }
+        $users_coin = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=:cid AND time>:delay", array(':cid' => $coin->id, ':delay' => $delay));
+        $workers_coins = $users_coin;
+        $solo_workers_coins = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=:cid AND solo=1 AND time>:delay", array(':cid' => $coin->id, ':delay' => $delay));
         echo '<td class="text-center">'.$users_coin.'</td>';
         echo '<td class="text-center text-muted">'.$workers_coins.' / '.$solo_workers_coins.'</td>';
         

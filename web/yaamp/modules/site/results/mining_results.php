@@ -196,11 +196,9 @@ foreach ($list as $coin) {
     else
         echo "<td class='text-end small'>$height</td>";
 
-    if (!YAAMP_ALLOW_EXCHANGE && !empty($real_ttf) && !empty($shared_real_ttf) && !empty($solo_real_ttf))
-        echo '<td class="text-end small" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
-Solo: '.$solo_real_ttf.' at '.$pool_solo_hash_sfx.'
-Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
-    elseif (!empty($real_ttf) && !empty($shared_real_ttf) && !empty($solo_real_ttf))
+    if ($coin->auxpow) {
+        echo '<td class="text-end small text-muted" title="Merge mined — TTF not applicable">-</td>';
+    } elseif (!YAAMP_ALLOW_EXCHANGE && !empty($real_ttf) && !empty($shared_real_ttf) && !empty($solo_real_ttf))
         echo '<td class="text-end small" title="Shared: '.$shared_real_ttf.' at '.$pool_shared_hash_sfx.'
 Solo: '.$solo_real_ttf.' at '.$pool_solo_hash_sfx.'
 Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';

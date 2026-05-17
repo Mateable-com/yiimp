@@ -113,7 +113,11 @@ void share_add(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *extranonc
 					aux_userid = (*client->aux_userids)[auxcoinid];
 				}
 
-				share_add_worker(client, job, valid, ntime, share_diff, error_number, auxcoinheight, auxcoinid, true, aux_userid);
+				// Only track aux shares when miner explicitly set m=COIN:address.
+				// Without an address, aux blocks are still found and submitted in
+				// the background but rewards stay in the pool wallet unattributed.
+				if(aux_userid)
+					share_add_worker(client, job, valid, ntime, share_diff, error_number, auxcoinheight, auxcoinid, true, aux_userid);
 			}
 		}
 	}
