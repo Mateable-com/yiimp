@@ -49,7 +49,7 @@ if (!empty($pool_announcement)):
                 <div class="row align-items-center">
                     <div class="col-lg-7">
                         <div class="badge bg-primary px-3 py-2 rounded-pill mb-3 fw-bold text-uppercase small" style="letter-spacing: 2px;">Professional Grade Infrastructure</div>
-                        <h1 class="display-4 fw-bold mb-3"><?=settings_get('site_name', YAAMP_SITE_NAME)?></h1>
+                        <h1 class="display-4 fw-bold mb-3"><?=settings_get('site_name', defined('YIIMP_SITE_NAME') ? YIIMP_SITE_NAME : YAAMP_SITE_NAME)?></h1>
                         <p class="lead opacity-75 mb-4 pe-lg-5">High-performance multi-algo mining with automated payouts, maximum transparency, and ultra-low fees. Built for professional miners who demand the best.</p>
                         <div class="d-flex flex-wrap gap-3">
                             <a href="javascript:void(0);" onclick="document.getElementById('mine-now').scrollIntoView({behavior: 'smooth'});" class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill shadow-lg hover-up">START MINING NOW</a>
@@ -184,7 +184,7 @@ if (!empty($pool_announcement)):
                 <div class="position-relative mb-2">
                     <div id="len-warning" class="badge bg-warning text-dark position-absolute top-0 start-0 m-2 d-none shadow-sm" style="z-index: 10;"><i class="fa fa-exclamation-triangle me-1"></i> Warning: Password field might be too long!</div>
                     <pre class="bg-dark text-success p-4 rounded-4 shadow-sm mb-0 font-monospace" style="font-size: 0.9rem; border: 1px solid #334155;">
-<span id="output" class="text-break opacity-75">-a algo -o stratum+tcp://<?=YAAMP_STRATUM_URL?>:port -u wallet.worker -p c=symbol</span></pre>
+<span id="output" class="text-break opacity-75">-a algo -o stratum+tcp://<?=defined('YIIMP_STRATUM_URL') ? YIIMP_STRATUM_URL : YAAMP_STRATUM_URL?>:port -u wallet.worker -p c=symbol</span></pre>
                     <button class="btn btn-sm btn-link text-success position-absolute top-0 end-0 m-2 text-decoration-none fw-bold" onclick="copyConfig()"><i class="fa fa-copy me-1"></i> COPY</button>
                 </div>
                 <div class="text-muted small text-center"><i class="fa fa-shield-alt me-1 opacity-50"></i> Payouts are automated every <?=$payout_freq?>.</div>
@@ -425,7 +425,7 @@ function getLastUpdated(){
     var symbol = coin.options[coin.selectedIndex].dataset.symbol;
     var extra = coin.options[coin.selectedIndex].dataset.extra;
 
-    var result = algo_param + ' -o stratum+tcp://' + stratum.value + '<?=YAAMP_STRATUM_URL?>:' + port + ' -u ';
+    var result = algo_param + ' -o stratum+tcp://' + stratum.value + '<?=defined('YIIMP_STRATUM_URL') ? YIIMP_STRATUM_URL : YAAMP_STRATUM_URL?>:' + port + ' -u ';
     
     // Build primary credentials
     var userStr = wallet ? wallet : 'YOUR_WALLET';

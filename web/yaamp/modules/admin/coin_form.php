@@ -64,6 +64,20 @@ $(function() {
             if ($('#db_coins_dedicatedport').val() == '') $('#db_coins_dedicatedport').val(algoPorts[algo].strat);
         }
     });
+
+    // Auto-suggest image when symbol is typed
+    $('#db_coins_symbol').on('blur', function() {
+        var sym = $(this).val().toUpperCase();
+        if (!sym || $('#db_coins_image').val()) return;
+        var url = '/images/coin-' + sym + '.png';
+        var img = new Image();
+        img.onload = function() {
+            $('#db_coins_image').val(url);
+            $('#coin-img-preview').attr('src', url);
+            $('#coin-img-picker').val(url);
+        };
+        img.src = url;
+    });
 });
 </script>
 EOT;
@@ -79,7 +93,44 @@ $ListAlgos = []; $db_algos = getdbolist('db_algos'); foreach ($db_algos as $a) $
 echo CHtml::activeDropDownList($coin, 'algo', $ListAlgos, array('class'=>'form-select border-2')).'<div class="form-text small">Must be lower-case.</div></div>';
 echo '  </div>';
 echo '  <div class="col-md-6">';
-echo '    <div class="mb-3"><label class="form-label fw-bold small text-uppercase">Coin Icon URL</label>'.CHtml::activeTextField($coin, 'image', array('class'=>'form-control border-2', 'placeholder'=>'/images/btc.png')).'</div>';
+// Image picker
+$imgDir = YAAMP_HTDOCS.'/images/';
+$imgFiles = glob($imgDir.'coin-*.png');
+$imgOptions = array('' => '-- Custom URL --');
+foreach($imgFiles as $f) {
+    $base = basename($f);
+    $imgOptions['/images/'.$base] = preg_replace('/^coin-(.+)\.png$/', '$1', $base);
+}
+asort($imgOptions);
+$currentImg = $coin->image;
+echo '    <div class="mb-3">';
+echo '      <label class="form-label fw-bold small text-uppercase">Coin Icon</label>';
+echo '      <div class="d-flex align-items-center gap-2 mb-2">';
+echo '        <img id="coin-img-preview" src="'.htmlspecialchars($currentImg).'" width="32" height="32" class="rounded-circle border shadow-sm" onerror="this.src=\'/images/btc.png\'">';
+echo '        <span class="text-muted small">Preview</span>';
+echo '      </div>';
+echo '      <select id="coin-img-picker" class="form-select border-2 mb-2">';
+foreach($imgOptions as $val => $label) {
+    $sel = ($val === $currentImg) ? ' selected' : '';
+    echo '<option value="'.htmlspecialchars($val).'"'.$sel.'>'.htmlspecialchars($label).'</option>';
+}
+echo '      </select>';
+echo '      '.CHtml::activeTextField($coin, 'image', array('class'=>'form-control border-2', 'placeholder'=>'/images/coin-BTC.png', 'id'=>'db_coins_image'));
+echo '      <div class="form-text small">Select from list or type a custom URL.</div>';
+echo '    </div>';
+echo '    <script>
+document.getElementById("coin-img-picker").addEventListener("change", function() {
+    var val = this.value;
+    if(val) {
+        document.getElementById("db_coins_image").value = val;
+        document.getElementById("coin-img-preview").src = val;
+    }
+});
+document.getElementById("db_coins_image").addEventListener("input", function() {
+    document.getElementById("coin-img-preview").src = this.value;
+    document.getElementById("coin-img-picker").value = this.value || "";
+});
+</script>';
 echo '    <div class="row"><div class="col-6"><label class="form-label fw-bold small text-uppercase">Payout Min</label>'.CHtml::activeTextField($coin, 'payout_min', array('class'=>'form-control border-2')).'</div>';
 echo '    <div class="col-6"><label class="form-label fw-bold small text-uppercase">Payout Max</label>'.CHtml::activeTextField($coin, 'payout_max', array('class'=>'form-control border-2')).'</div></div>';
 echo '    <div class="mt-3"><label class="form-label fw-bold small text-uppercase">Maturity Blocks</label>'.CHtml::activeTextField($coin, 'mature_blocks', array('class'=>'form-control border-2')).'<div class="form-text small">Required confirmations for rewards.</div></div>';
@@ -121,6 +172,7 @@ echo '    <div class="form-check form-switch"><label class="form-check-label fw-
 echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Has SubmitBlock RPC</label>'.CHtml::activeCheckBox($coin, 'hassubmitblock', array('class'=>'form-check-input')).'</div>';
 echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Has Masternodes</label>'.CHtml::activeCheckBox($coin, 'hasmasternodes', array('class'=>'form-check-input')).'</div>';
 echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">Use SegWit</label>'.CHtml::activeCheckBox($coin, 'usesegwit', array('class'=>'form-check-input')).'</div>';
+echo '    <div class="form-check form-switch"><label class="form-check-label fw-bold">MWEB (LTC MimbleWimble)</label>'.CHtml::activeCheckBox($coin, 'usemweb', array('class'=>'form-check-input')).'</div>';
 echo '  </div>';
 echo '</div></div>';
 

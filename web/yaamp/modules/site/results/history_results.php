@@ -50,17 +50,25 @@ foreach($list as $item)
 	$coin = getdbo('db_coins', $item['coin_id']);
 	if(!$coin || $coin->symbol == 'BTC') continue;
 
+	// For aux coins, only show blocks found after first explicit miner address was set
+	$aux_since = 0;
+	if ($coin->auxpow) {
+		$aux_since = (int) dboscalar("SELECT MIN(time) FROM shares WHERE coinid={$coin->id} AND valid=1");
+		if (!$aux_since) continue; // no explicit miner ever — hide completely
+	}
+
 	$id = $coin->id;
 	$main_ids[$id] = $coin->symbol;
 
-	$res1 = controller()->memcache->get_database_row("history_item1-$id-$algo",
-		"SELECT COUNT(id) as a, SUM(amount*price) as b FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t1 AND algo=:algo", array(':algo'=>$algo));
-	$res2 = controller()->memcache->get_database_row("history_item2-$id-$algo",
-		"SELECT COUNT(id) as a, SUM(amount*price) as b FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t2 AND algo=:algo", array(':algo'=>$algo));
-	$res3 = controller()->memcache->get_database_row("history_item3-$id-$algo",
-		"SELECT COUNT(id) as a, SUM(amount*price) as b, MIN(time) as t FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t3 AND algo=:algo", array(':algo'=>$algo));
-	$res4 = controller()->memcache->get_database_row("history_item4-$id-$algo",
-		"SELECT COUNT(id) as a, SUM(amount*price) as b, MIN(time) as t FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t4 AND algo=:algo", array(':algo'=>$algo));
+	$aux_filter = $aux_since ? "AND time>=$aux_since" : "";
+	$res1 = controller()->memcache->get_database_row("history_item1-$id-$algo-$aux_since",
+		"SELECT COUNT(id) as a, SUM(amount*price) as b FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t1 $aux_filter AND algo=:algo", array(':algo'=>$algo));
+	$res2 = controller()->memcache->get_database_row("history_item2-$id-$algo-$aux_since",
+		"SELECT COUNT(id) as a, SUM(amount*price) as b FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t2 $aux_filter AND algo=:algo", array(':algo'=>$algo));
+	$res3 = controller()->memcache->get_database_row("history_item3-$id-$algo-$aux_since",
+		"SELECT COUNT(id) as a, SUM(amount*price) as b, MIN(time) as t FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t3 $aux_filter AND algo=:algo", array(':algo'=>$algo));
+	$res4 = controller()->memcache->get_database_row("history_item4-$id-$algo-$aux_since",
+		"SELECT COUNT(id) as a, SUM(amount*price) as b, MIN(time) as t FROM blocks WHERE coin_id=$id AND NOT category IN ('orphan','stake','generated') AND time>$t4 $aux_filter AND algo=:algo", array(':algo'=>$algo));
 
 	$total1 += $res1['b']; $total2 += $res2['b']; $total3 += $res3['b']; $total4 += $res4['b'];
 

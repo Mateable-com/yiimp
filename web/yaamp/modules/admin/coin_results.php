@@ -128,7 +128,7 @@ echo '    <table class="table table-hover table-sm mb-0 small"><thead class="tab
 echo '      <th class="ps-4">Time</th><th>Category</th><th>Amount</th><th>Confirmations</th><th>Address</th><th class="pe-4">Explorer</th></tr></thead><tbody>';
 
 $maxrows = (int) arraySafeVal($_GET, 'rows', 50);
-$account = ($coin->symbol == "BTC" || $DCR || $DGB) ? '*' : '';
+$account = '*';
 $txs = $remote->listtransactions($account, $maxrows);
 
 if (!empty($txs) && is_array($txs)) {
@@ -147,4 +147,46 @@ if (!empty($txs) && is_array($txs)) {
 } else { echo '<tr><td colspan="6" class="py-4 text-center text-muted">No recent transactions found or wallet unreachable.</td></tr>'; }
 
 echo '</tbody></table></div></div></div>';
+
+// --- Merge Mining Stats (aux coins only) ---
+if ($coin->auxpow) {
+    $main_coinid = (int) dboscalar("SELECT id FROM coins WHERE enable=1 AND (auxpow IS NULL OR auxpow=0) AND algo='".addslashes($coin->algo)."' ORDER BY id ASC LIMIT 1");
+    $main_coin = $main_coinid ? getdbo('db_coins', $main_coinid) : null;
+    if ($main_coinid) {
+        $interval = yaamp_hashrate_step();
+        $delay = time() - $interval;
+        $merge_workers = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=$main_coinid AND valid=1 AND time>$delay");
+        $target = yaamp_hashrate_constant($coin->algo);
+        $merge_hash_raw = (float) dboscalar("SELECT (SUM(difficulty) * $target / $interval / 1000) FROM shares WHERE valid=1 AND time>$delay AND coinid=$main_coinid");
+        $merge_hash = $merge_hash_raw ? Itoa2($merge_hash_raw) : '0 H/s';
+        $explicit_workers = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid={$coin->id} AND valid=1 AND time>$delay");
+        $main_symbol = $main_coin ? $main_coin->symbol : '#'.$main_coinid;
+
+        echo '<div class="card shadow-sm border-0 rounded-3 mt-4">';
+        echo '  <div class="card-header bg-info bg-opacity-10 border-0 py-3 d-flex align-items-center">';
+        echo '    <h5 class="mb-0 fw-bold text-info"><i class="fa fa-layer-group me-2"></i>Merge Mining Status</h5>';
+        echo '    <span class="badge bg-info text-dark ms-3">AUX PoW via '.$main_symbol.'</span>';
+        echo '  </div>';
+        echo '  <div class="card-body">';
+        echo '  <div class="row g-3">';
+
+        $stat_cards = [
+            ['label' => 'Main Chain', 'val' => ($main_coin ? $main_coin->name.' ('.$main_coin->symbol.')' : $main_symbol), 'sub' => 'All miners on this chain also mine '.$symbol, 'icon' => 'link', 'color' => 'primary'],
+            ['label' => 'Total Hashrate', 'val' => $merge_hash, 'sub' => 'Full pool power applied to '.$symbol, 'icon' => 'tachometer-alt', 'color' => 'success'],
+            ['label' => 'Background Miners', 'val' => $merge_workers, 'sub' => 'Mining '.$symbol.' automatically', 'icon' => 'users', 'color' => 'warning'],
+            ['label' => 'Explicit Address Set', 'val' => $explicit_workers, 'sub' => 'Miners receiving '.$symbol.' payouts', 'icon' => 'wallet', 'color' => 'info'],
+        ];
+        foreach ($stat_cards as $c) {
+            echo '<div class="col-md-6 col-lg-3"><div class="card border-0 bg-light h-100"><div class="card-body">';
+            echo '<div class="d-flex justify-content-between align-items-center mb-2"><span class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">'.$c['label'].'</span><i class="fa fa-'.$c['icon'].' text-'.$c['color'].' opacity-50 fs-5"></i></div>';
+            echo '<h5 class="mb-1 fw-bold">'.$c['val'].'</h5>';
+            echo '<div class="small text-muted">'.$c['sub'].'</div>';
+            echo '</div></div></div>';
+        }
+        echo '  </div>';
+        echo '  <div class="alert alert-info border-0 mb-0 mt-3 small py-2"><i class="fa fa-info-circle me-2"></i>All <b>'.$merge_workers.'</b> miners on the <b>'.$main_symbol.'</b> chain contribute hashrate to '.$symbol.' via merge mining. Only <b>'.$explicit_workers.'</b> have set an explicit address to receive '.$symbol.' payouts. The rest mine in the background with rewards going to the pool wallet.</div>';
+        echo '  </div>';
+        echo '</div>';
+    }
+}
 ?>

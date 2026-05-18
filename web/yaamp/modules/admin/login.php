@@ -18,10 +18,7 @@ $this->pageTitle = 'Admin Login - ' . YAAMP_SITE_NAME;
 
                     <?php $loginform = $this->beginWidget('CActiveForm', array(
                         'id' => 'login-form',
-                        'enableClientValidation' => true,
-                        'clientOptions' => array(
-                            'validateOnSubmit' => true,
-                        ),
+                        'enableClientValidation' => false,
                         'htmlOptions' => array('class' => 'needs-validation')
                     )); ?>
 

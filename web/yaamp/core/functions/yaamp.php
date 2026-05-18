@@ -387,7 +387,7 @@ function yaamp_pool_rate($algo=null)
 	$delay = time()-$interval;
 
 	$rate = controller()->memcache->get_database_scalar("yaamp_pool_rate-$algo",
-		"SELECT (sum(difficulty) * $target / $interval / 1000) FROM shares WHERE valid AND time>$delay AND algo=:algo", array(':algo'=>$algo));
+		"SELECT (sum(difficulty) * $target / $interval / 1000) FROM shares WHERE valid AND time>$delay AND algo=:algo AND coinid IN (SELECT id FROM coins WHERE auxpow IS NULL OR auxpow=0)", array(':algo'=>$algo));
 
 	return $rate;
 }
@@ -400,7 +400,7 @@ function yaamp_pool_shared_rate($algo=null)
 	$interval = yaamp_hashrate_step();
 	$delay = time()-$interval;
 
-	$rate = controller()->memcache->get_database_scalar("yaamp_pool_shared_rate-$algo","SELECT (sum(difficulty) * $target / $interval / 1000) FROM shares WHERE valid AND time>$delay AND algo=:algo AND solo=0", array(':algo'=>$algo));
+	$rate = controller()->memcache->get_database_scalar("yaamp_pool_shared_rate-$algo","SELECT (sum(difficulty) * $target / $interval / 1000) FROM shares WHERE valid AND time>$delay AND algo=:algo AND solo=0 AND coinid IN (SELECT id FROM coins WHERE auxpow IS NULL OR auxpow=0)", array(':algo'=>$algo));
 	return $rate;
 }
 
@@ -412,7 +412,7 @@ function yaamp_pool_solo_rate($algo=null)
 	$interval = yaamp_hashrate_step();
 	$delay = time()-$interval;
 
-	$rate = controller()->memcache->get_database_scalar("yaamp_pool_solo_rate-$algo","SELECT (sum(difficulty) * $target / $interval / 1000) FROM shares WHERE valid AND time>$delay AND algo=:algo AND solo=1", array(':algo'=>$algo));
+	$rate = controller()->memcache->get_database_scalar("yaamp_pool_solo_rate-$algo","SELECT (sum(difficulty) * $target / $interval / 1000) FROM shares WHERE valid AND time>$delay AND algo=:algo AND solo=1 AND coinid IN (SELECT id FROM coins WHERE auxpow IS NULL OR auxpow=0)", array(':algo'=>$algo));
 	return $rate;
 }
 

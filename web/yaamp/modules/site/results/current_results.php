@@ -103,7 +103,7 @@ foreach ($algos as $item) {
         $solo_workers_coins = (int) dboscalar("SELECT COUNT(DISTINCT userid) FROM shares WHERE coinid=:cid AND solo=1 AND time>:delay", array(':cid' => $coin->id, ':delay' => $delay));
         echo '<td class="text-center">'.$users_coin.'</td>';
         echo '<td class="text-center text-muted">'.$workers_coins.' / '.$solo_workers_coins.'</td>';
-        
+
         $pool_hash = Itoa2(yaamp_coin_rate($coin->id));
         $pool_shared_hash = Itoa2(yaamp_coin_shared_rate($coin->id));
         $pool_solo_hash = Itoa2(yaamp_coin_solo_rate($coin->id));

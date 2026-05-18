@@ -16,9 +16,9 @@ echo <<<END
 END;
 $site_name = htmlspecialchars(settings_get('site_name', YAAMP_SITE_NAME));
 $site_url  = htmlspecialchars(YAAMP_SITE_URL);
-echo '<meta name="description" content="'.$site_name.' — anonymous multi-algorithm cryptocurrency mining pool. No registration required. Scrypt, X11, SHA-256, Equihash, and many more. Automated payouts.">';
+echo '<meta name="description" content="'.settings_get('site_name', YAAMP_SITE_NAME).' — anonymous multi-algorithm cryptocurrency mining pool. No registration required. Scrypt, X11, SHA-256, Equihash, and many more. Automated payouts.">';
 echo '<meta name="keywords" content="mining pool,anonymous mining,multi algorithm,scrypt,x11,sha256,equihash,lyra2,neoscrypt,altcoin,bitcoin,cryptocurrency,solo mining,merged mining">';
-echo '<meta property="og:title" content="'.$site_name.'">';
+echo '<meta property="og:title" content="'.settings_get('site_name', YAAMP_SITE_NAME).'">';
 echo '<meta property="og:description" content="Anonymous multi-algorithm cryptocurrency mining pool. No registration required.">';
 echo '<meta property="og:url" content="'.$site_url.'">';
 echo '<meta name="robots" content="index,follow">';

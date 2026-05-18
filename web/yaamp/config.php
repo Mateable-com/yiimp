@@ -54,7 +54,7 @@ return array(
 		),
 
 		'request'=>array(
-			'enableCsrfValidation'=>true,
+			'enableCsrfValidation'=>false,
 		),
 
 		'db'=>array(
